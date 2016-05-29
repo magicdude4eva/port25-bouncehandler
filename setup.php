@@ -131,15 +131,45 @@ class Logging {
         $lfile = $this->log_file ? $this->log_file : $log_file_default;
         // open log file for writing only and place file pointer at the end of the file
         // (if the file does not exist, try to create it)
-        if (!is_writable($lfile)) {
-        	$lfile = 'pmta-bounce-handler.log';
+	// First try to write to configured log-file
+        if ($this->debug == 0) {
+	    $this->fp = fopen($lfile, 'a') or $lfile = 'pmta-bounce-handler.log';
         }
         
-        if ($this->debug == 0) {
-	        $this->fp = fopen($lfile, 'a') or exit("Can't open $lfile!");
-	    }
+        if ($this->debug == 0 && is_null($this->fp)) {
+	    $this->fp = fopen($lfile, 'a') or exit("Can't open $lfile!");
+	}
     }
 }
 // LOGGING CLASS
 // ========================================================================================================
 
+class BounceUtility {
+
+// Test if URL is available
+public static function testEndpointURL($endpointURL) {
+	global $log;
+	
+	$ch = curl_init($endpointURL);
+	curl_setopt($ch,  CURLOPT_RETURNTRANSFER, TRUE);
+	curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+
+	$result = curl_exec($ch);
+
+	if ($result === false || is_null($result) || empty($result)) {
+		$log->lwrite('   Failed connecting to ' . $endpointURL . ', check conncitivity!');
+    	return false;
+	}
+
+	$httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+
+	if ($httpCode != 200) {
+		$log->lwrite('   Failed connecting to ' . $endpointURL . ', error=' . $httpCode);
+		return false;
+	}
+
+	return true;
+}
+
+
+}

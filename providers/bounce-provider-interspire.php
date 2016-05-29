@@ -41,6 +41,11 @@ if (defined('INTERSPIRE_API_KEY') && INTERSPIRE_API_KEY &&
     defined('INTERSPIRE_ENDPOINT_URL') && INTERSPIRE_ENDPOINT_URL &&
     defined('INTERSPIRE_USER_ID') && INTERSPIRE_USER_ID) {
     $log->lwrite('   Endpoint-URL=' . INTERSPIRE_ENDPOINT_URL);
+
+    if (!BounceUtility::testEndpointURL(INTERSPIRE_ENDPOINT_URL)) {
+        return;
+    }
+
     $apiInterspireListIDs = implode(',', Interspire_getLists());
     
     if (is_null($apiInterspireListIDs) || empty($apiInterspireListIDs)) {
@@ -61,9 +66,9 @@ $log->lwrite('Bounce-provider: Interspire, complete');
 // INTERSPIRE FUNCTIONS
 // Handle the unsubscription of a recipient
 function Interspire_unsubscribeRecipient($recipient) { 
-	global $log, $apiInterspireListIDs;
+	global $log, $apiInterspireListIDs, $INTERSPIRE_HANDLER_ENABLED;
 	
-	if (INTERSPIRE_HANDLER_ENABLED == false) {
+	if ($INTERSPIRE_HANDLER_ENABLED == false) {
 		return;
 	}
 
@@ -113,7 +118,7 @@ function Interspire_getLists() {
     
 	if ($result === false || is_null($result) || empty($result)) {
 		$log->lwrite('  Interspire: Can not access Interspire to get Interspire Lists!');
-		return null;
+		return (array) null;
 	}
 	
 	$response = (array) simplexml_load_string($result);

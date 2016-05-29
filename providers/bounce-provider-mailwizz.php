@@ -40,6 +40,11 @@ if (defined('MAILWIZZ_API_PUBLIC_KEY') && MAILWIZZ_API_PUBLIC_KEY &&
     defined('MAILWIZZ_API_PRIVATE_KEY') && MAILWIZZ_API_PRIVATE_KEY &&
     defined('MAILWIZZ_ENDPOINT_URL') && MAILWIZZ_ENDPOINT_URL) {
     $log->lwrite('   Endpoint-URL=' . MAILWIZZ_ENDPOINT_URL);
+
+    if (!BounceUtility::testEndpointURL(MAILWIZZ_ENDPOINT_URL)) {
+        return;
+    }
+
     require_once dirname(__FILE__) . '/MailWizzApi/Autoloader.php';
     
     MailWizzApi_Autoloader::register();
@@ -69,9 +74,9 @@ $log->lwrite('Bounce-provider: MailWizz, complete');
 // MAILWIZZ FUNCTIONS
 // Handle MailWizz unsubscribe
 function MailWizz_unsubscribeRecipient($recipient) { 
-	global $log, $MailWizzEndPoint;
+	global $log, $MailWizzEndPoint, $MAILWIZZ_HANDLER_ENABLED;
 	
-	if (MAILWIZZ_HANDLER_ENABLED == false) {
+	if ($MAILWIZZ_HANDLER_ENABLED == false) {
 		return;
 	}
 
