@@ -171,11 +171,7 @@ Once you are comfortable with this you can then switch into automatic processing
 ## Automatic processing
 Switching to automatic processing is quite simple, you adjust your current record to the following:
 ```
-~~<acct-file /var/log/pmta/bounce.csv>~~
 <acct-file | /usr/bin/php /opt/pmta/bouncehandler/bouncehandler.php>
-    ~~delete-after 60d~~
-    ~~move-interval 5m~~
-    ~~max-size 500M~~
     records b
     record-fields b timeQueued,bounceCat,vmta,orig,rcpt,srcMta,dlvSourceIp,jobId,dsnStatus,dsnMta
 </acct-file>
