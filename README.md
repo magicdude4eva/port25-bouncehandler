@@ -121,8 +121,43 @@ The processing of a PowerMTA file is quite similar, with the only addition that 
 ...
 ```
 
-# Port25 automatic processing
+# Port25 processing
 :warning: I can not help you with configuration/setup issues when it comes to PowerMTA. I have extensive experience, but each setup varies, although the basic principles remain the same.
 
+If you do not follow the default setup below, I suggest you read the PowerMTA user-guide (specifically: `3.3.7 Accounting Directives` and `11. The Accounting and Statistics`).
 
+My suggestion is that you first start off with manual processing, by just adding the following section to your /etc/pmta/config file.
+```
+<acct-file /var/log/pmta/bounce.csv>
+    delete-after 60d
+    move-interval 5m
+    max-size 500M
+    records b
+    record-fields b timeQueued,bounceCat,vmta,orig,rcpt,srcMta,dlvSourceIp,jobId,dsnStatus,dsnMta
+</acct-file>
+    
+```
+
+This will generate an accounting file for just bounced records and will look something like this:
+```
+type,timeQueued,bounceCat,vmta,orig,rcpt,srcMta,dlvSourceIp,jobId,dsnStatus,dsnMta
+b,2016-05-29 01:10:51+0200,bad-domain,vmta-mymta04,mailwizz@example.com,XXX@domain.com,sourcemta.domain.com (0.0.0.0),1.1.1.1,,5.1.2 (bad destination system: no such domain),
+b,2016-05-29 01:10:23+0200,bad-mailbox,vmta-mymta03,mailwizz@example.com,YYY@anotherdomain.com,sourcemta.domain.com (0.0.0.0),1.1.1.1,,5.1.1 (bad destination mailbox address),mx1.destindomain.com (2.2.2.2)
+```
+
+Our bounce-processing relies on the sequence of record-fields in the bounce-file and if you change the order, you will need to change the index of those fields in the constants `PORT25_OFFSET_*` as defined in `bouncehandler.php`:
+
+PowerMTA field | mapped record | Description
+------------ | ------------- | -------------
+type | bounceRecord[0] | type - always b
+timeQueued | bounceRecord[1] | Time message was queued to disk
+bounceCat | bounceRecord[2] | likely category of the bounce (see Section 1.5), following the recipient which it refers
+vmta | bounceRecord[3] | VirtualMTA selected for this message, if any
+orig | bounceRecord[4] | originator (from MAIL FROM:<x>)
+rcpt | bounceRecord[5] | recipient (RCPT TO:<x>) being reported
+srcMta | bounceRecord[6] | source from which the message was received. the MTA name (from the HELO/EHLO command) for messages received through SMTP
+dlvSourceIp | bounceRecord[7] | local IP address PowerMTA used for delivery
+jobId | bounceRecord[8] | job ID for the message, if any
+dsnStatus | bounceRecord[9] | DSN status for the recipient to which it refers
+dsnMta | bounceRecord[10] | DSN remote MTA for the recipient to which it refers
 
