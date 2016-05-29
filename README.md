@@ -126,6 +126,7 @@ The processing of a PowerMTA file is quite similar, with the only addition that 
 
 If you do not follow the default setup below, I suggest you read the PowerMTA user-guide (specifically: `3.3.7 Accounting Directives` and `11. The Accounting and Statistics`).
 
+## Process manually first
 My suggestion is that you first start off with manual processing, by just adding the following section to your /etc/pmta/config file.
 ```
 <acct-file /var/log/pmta/bounce.csv>
@@ -135,7 +136,6 @@ My suggestion is that you first start off with manual processing, by just adding
     records b
     record-fields b timeQueued,bounceCat,vmta,orig,rcpt,srcMta,dlvSourceIp,jobId,dsnStatus,dsnMta
 </acct-file>
-    
 ```
 
 This will generate an accounting file for just bounced records and will look something like this:
@@ -161,3 +161,24 @@ jobId | bounceRecord[8] | job ID for the message, if any
 dsnStatus | bounceRecord[9] | DSN status for the recipient to which it refers
 dsnMta | bounceRecord[10] | DSN remote MTA for the recipient to which it refers
 
+You can then run the bounce-processing manually:
+```
+cat /var/log/pmta/bounce-2016-05-29-0000.csv | /usr/bin/php /opt/pmta/bouncehandler/bouncehandler.php
+```
+
+Once you are comfortable with this you can then switch into automatic processing.
+
+## Automatic processing
+Switching to automatic processing is quite simple, you adjust your current record to the following:
+```
+~~<acct-file /var/log/pmta/bounce.csv>~~
+<acct-file | /usr/bin/php /opt/pmta/bouncehandler/bouncehandler.php>
+    ~~delete-after 60d~~
+    ~~move-interval 5m~~
+    ~~max-size 500M~~
+    records b
+    record-fields b timeQueued,bounceCat,vmta,orig,rcpt,srcMta,dlvSourceIp,jobId,dsnStatus,dsnMta
+</acct-file>
+```
+
+Ensure that the bouncehandler logs the startup-messages in it's log-file. If this does not happen, then PowerMTA is not able to run the PHP due to possible permission errors (ownership of the /opt/pmta/bouncehandler folder or no executable permissions of the `bouncehandler.php`).
