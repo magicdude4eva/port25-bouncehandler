@@ -139,6 +139,7 @@ while(( $bounceRecord = fgetcsv(STDIN,4096)) !== FALSE ) {
 	// If we have a transactional match, call the transactional webhook
 	if (in_array($bounceRecord[PORT25_OFFSET_SOURCE_EMAIL], $origTransactional)) {
 		++$totalRecordsProcessed;
+		// DELIBERATELY LEFT OUT - HERE WE USE OUR OWN WEBHOOK INTO OUR PROPRIETARY TRANSACTIONAL SYSTEM
 		continue;
 	}
 	
