@@ -70,7 +70,9 @@ You can manage bulk-unsubscribes via standalone. The only pre-requisite is a CSV
 :warning: With Standalone processing we will **always** unsubscribe from all configured providers, so make sure that your CSV file is correct. We do however log from which lists a recipient is unsubscribed, so in case something goes wrong, you can find out which addresses are affected.
 
 To run the standalone processing you simply pipe the CSV file into the bounce-handler:
-```cat bounce.csv | /usr/bin/php ./bouncehandler/bouncehandler.php```
+```
+cat bounce.csv | /usr/bin/php ./bouncehandler/bouncehandler.php
+```
 
 This will then output progress into the console or log-file:
 ```
@@ -96,6 +98,27 @@ This will then output progress into the console or log-file:
 [29/May/2016:11:22:12] Completed bounce processing! Total records=4, processed=4, skipped=0
 ```
 
+The Standalone processing can also be used to process PowerMTA files without using the `acct-file`-pipe-processing. It is perhaps something you should look at before automating it to test that integration works and that your bounce file is correct.
 
+Running a PowerMTA file in standalone processing is the same command as above:
+```
+cat pmta-bounce-file.csv | /usr/bin/php ./bouncehandler/bouncehandler.php
+```
+
+Note that if your setup does not follow the recommendations for the `acct-file` and your columns are in different sequence, you will have to change the `PORT25_OFFSET_*`-constants in `bouncehandler.php`.
+
+The processing of a PowerMTA file is quite similar, with the only addition that the record and bounce-category is also logged:
+
+```
+...
+[29/May/2016:11:28:04] Bounce: bad-domain from=mailwizz@campaign.com via vmta-my-mta01/XXX@domain.com
+[29/May/2016:11:28:06]   MailWizz: Skipping XXX@domain.com, already unsubscribed!
+[29/May/2016:11:28:06] Bounce: bad-mailbox from=mailwizz@campaign.com via vmta-my-mta01/YYY@anotherdomain.com
+[29/May/2016:11:28:06]   MailWizz: unsubscribe for YYY@anotherdomain.com:
+[29/May/2016:11:28:06]    - skipped: MailWizz list name
+[29/May/2016:11:28:06] Bounce: bad-domain from=interspire@campaign.com via vmta-my-mta01/WWW@domain.com
+[29/May/2016:11:28:07]   Interspire: Skipping recipient WWW@domain.com - no subscribed lists returned
+...
+```
 
 
