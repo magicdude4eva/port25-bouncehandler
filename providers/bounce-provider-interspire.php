@@ -1,0 +1,211 @@
+<?php
+ /*
+ * 
+ * bouncehandler.php | MailWizz / PowerMTA / Webhook bounce handler
+ * Copyright (c) 2016 Gerd Naschenweng / bidorbuy.co.za
+ * 
+ * The MIT License (MIT)
+ *
+ * @author Gerd Naschenweng <gerd@naschenweng.info>
+ * @link http://www.naschenweng.info/
+ * @copyright 2016 Gerd Naschenweng  http://github.com/magicdude4eva
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ *
+ */
+
+$log->lwrite('Bounce-provider: Interspire, initialising');
+
+// ------------------------------------------------------------------------------------------------------
+// **** Initialise Interspire
+$apiInterspireListIDs = [];
+$INTERSPIRE_HANDLER_ENABLED = false;
+
+if (defined('INTERSPIRE_API_KEY') && INTERSPIRE_API_KEY && 
+    defined('INTERSPIRE_ENDPOINT_URL') && INTERSPIRE_ENDPOINT_URL &&
+    defined('INTERSPIRE_USER_ID') && INTERSPIRE_USER_ID) {
+    $log->lwrite('   Endpoint-URL=' . INTERSPIRE_ENDPOINT_URL);
+    $apiInterspireListIDs = implode(',', Interspire_getLists());
+    
+    if (is_null($apiInterspireListIDs) || empty($apiInterspireListIDs)) {
+        $log->lwrite('   Skipping Interspire, no contact-lists returned');
+    } else {
+        $log->lwrite('   Interspire enabled with lists=' . $apiInterspireListIDs);
+    	$INTERSPIRE_HANDLER_ENABLED = true;
+    }
+} else {
+$log->lwrite('   Skipped - not configured!');
+}
+
+$log->lwrite('Bounce-provider: Interspire, complete');
+
+
+
+// ========================================================================================================
+// INTERSPIRE FUNCTIONS
+// Handle the unsubscription of a recipient
+function Interspire_unsubscribeRecipient($recipient) { 
+	global $log, $apiInterspireListIDs;
+	
+	if (INTERSPIRE_HANDLER_ENABLED == false) {
+		return;
+	}
+
+	// Get the interspire lists
+	if (is_null($apiInterspireListIDs) || empty($apiInterspireListIDs)) {
+        $apiInterspireListIDs = implode(',', Interspire_getLists());
+    }
+    
+	if (is_null($apiInterspireListIDs) || empty($apiInterspireListIDs)) {
+        $log->lwrite('  Interspire: Unable to unsubscribe user ' . $recipient . ', Interspire lists are empy!');
+        return;
+    }
+    
+    // Get all lists for email recipient
+    $emailLists = Interspire_getAllListsForEmailAddress($recipient);
+
+	if (is_null($emailLists) || empty($emailLists)) {
+        $log->lwrite('  Interspire: Skipping recipient ' . $recipient . ' - no subscribed lists returned');
+        return;
+	}
+	
+	// Iterate through users lists and unsubscribe
+	foreach ($emailLists as $listid) {
+		$log->lwrite('   - Unsubscribe user ' . $recipient . ' from list=' . $listid . ', status=' . Interspire_unsubscribeSubscriber($recipient, $listid));
+	}
+
+    return ; 
+} 
+
+// Get Interspire lists - this is needed to individually unsubscribe users
+function Interspire_getLists() {
+	global $log;
+	
+	$xml = '<xmlrequest><username>' . INTERSPIRE_USER_ID . '</username>
+		<usertoken>' . INTERSPIRE_API_KEY . '</usertoken>
+		<requesttype>lists</requesttype>
+		<requestmethod>GetLists</requestmethod>
+		<details>
+		</details>
+		</xmlrequest>';
+	$ch = curl_init(INTERSPIRE_ENDPOINT_URL);
+	curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+	curl_setopt($ch, CURLOPT_POST, 1);
+	curl_setopt($ch, CURLOPT_TIMEOUT, ENDPOINT_TIMEOUT);
+	curl_setopt($ch, CURLOPT_POSTFIELDS, $xml);
+	$result = curl_exec($ch);
+    
+	if ($result === false || is_null($result) || empty($result)) {
+		$log->lwrite('  Interspire: Can not access Interspire to get Interspire Lists!');
+		return null;
+	}
+	
+	$response = (array) simplexml_load_string($result);
+	if ($response['status'] == 'SUCCESS') {
+		$listids = [];
+		foreach($response['data'] as $list) {
+			$listids[] = (string) $list->listid;
+		}
+		return (array) $listids;
+	}
+	
+	$log->lwrite('  Interspire: Can not access Interspire to get Interspire Lists, error is: ' . $response['errormessage']);
+	return (array) null;
+}
+
+// Post generic XML data to Interspire
+function Interspire_postXMLData($xml) {
+	global $log;
+	
+	$ch = curl_init(INTERSPIRE_ENDPOINT_URL);
+	curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+	curl_setopt($ch, CURLOPT_POST, 1);
+	curl_setopt($ch, CURLOPT_TIMEOUT, ENDPOINT_TIMEOUT);
+	curl_setopt($ch, CURLOPT_POSTFIELDS, $xml);
+	$result = curl_exec($ch);
+	
+	if ($result === false || is_null($result) || empty($result))
+    	return null;
+    
+    $xml_doc = simplexml_load_string($result);
+    
+    /** @noinspection PhpUndefinedFieldInspection */
+    if ($xml_doc->status == 'SUCCESS')
+        return 'OK';
+    
+    /** @noinspection PhpUndefinedFieldInspection */
+    return $xml_doc->errormessage->__toString();
+}
+
+// Get all lists for a recipient
+function Interspire_getAllListsForEmailAddress($email) {
+
+	global $log, $apiInterspireListIDs;
+	
+	$xml = '<xmlrequest>
+		<username>' . INTERSPIRE_USER_ID . '</username>
+		<usertoken>' . INTERSPIRE_API_KEY . '</usertoken>
+		<requesttype>subscribers</requesttype>
+		<requestmethod>GetAllListsForEmailAddress</requestmethod>
+		<details>
+		<email>' . $email . '</email>
+		<listids>' . $apiInterspireListIDs . '</listids>
+		</details>
+		</xmlrequest>';
+    $ch = curl_init(INTERSPIRE_ENDPOINT_URL);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+    curl_setopt($ch, CURLOPT_POST, 1);
+    curl_setopt($ch, CURLOPT_TIMEOUT, ENDPOINT_TIMEOUT);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $xml);
+    $result = curl_exec($ch);
+    if ($result === false || is_null($result) || empty($result))
+    	return null;
+    
+    $xml_doc = simplexml_load_string($result);
+    
+    if((string) $xml_doc->status == 'FAILED')
+    	return null;
+	
+	$list_ids = [];
+    /** @noinspection PhpUndefinedFieldInspection */
+    foreach ($xml_doc->data->item as $data) {
+    	$list_ids[] = (string) $data->listid;
+    }
+    return (array) $list_ids;
+}
+
+// Unsubscribe a recipient
+function Interspire_unsubscribeSubscriber($email, $list_id = 1) {
+
+	global $log;
+
+        $xml = '<xmlrequest>
+		<username>' . INTERSPIRE_USER_ID . '</username>
+		<usertoken>' . INTERSPIRE_API_KEY . '</usertoken>
+		<requesttype>subscribers</requesttype>
+		<requestmethod>UnsubscribeSubscriber</requestmethod>
+		<details>
+		<emailaddress>' . $email . '</emailaddress>
+		<listid>' . $list_id . '</listid>
+		</details>
+		</xmlrequest>';
+		
+    return Interspire_postXMLData($xml);
+}
+
