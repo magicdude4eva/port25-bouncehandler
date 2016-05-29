@@ -64,5 +64,38 @@ When we bounce an email-recipient in Interspire, we subscribe the email-recipien
 ## About MailWizz bounce processing
 MailWizz functions similar to Interspire and we also unsubscribe an email-recipient from all contact lists.
 
+# Standalone processing
+You can manage bulk-unsubscribes via standalone. The only pre-requisite is a CSV file which contains an email-address in the first column of the file.
+
+:warning: With Standalone processing we will **always** unsubscribe from all configured providers, so make sure that your CSV file is correct. We do however log from which lists a recipient is unsubscribed, so in case something goes wrong, you can find out which addresses are affected.
+
+To run the standalone processing you simply pipe the CSV file into the bounce-handler:
+```cat bounce.csv | /usr/bin/php ./bouncehandler/bouncehandler.php```
+
+This will then output progress into the console or log-file:
+```
+[29/May/2016:09:46:44] Port25 PowerMTA bounce-handler
+[29/May/2016:09:46:44] (C) 2016 Gerd Naschenweng  http://github.com/magicdude4eva
+[29/May/2016:09:46:44] ------------------------------------------------------------------
+[29/May/2016:09:46:44] Handling bounce categories=bad-mailbox,bad-domain,routing-errors,inactive-mailbox
+[29/May/2016:09:46:44] Bounce-provider: Interspire, initialising
+[29/May/2016:09:46:44]    Endpoint-URL=http://interspire.example.com/xml.php
+[29/May/2016:09:46:45]    Interspire enabled with lists=112,3,32,95,81,108,109,115,116,117
+[29/May/2016:09:46:45] Bounce-provider: Interspire, complete
+[29/May/2016:09:46:45] Bounce-provider: MailWizz, initialising
+[29/May/2016:09:46:45]    Endpoint-URL=http://mailwizz.example.com/api
+[29/May/2016:09:46:45]    MailWizz enabled!
+[29/May/2016:09:46:45] Bounce-provider: MailWizz, complete
+[29/May/2016:09:46:45] Starting bounce processing
+[29/May/2016:11:22:09] Starting bounce processing
+[29/May/2016:11:22:10]   MailWizz: unsubscribe for XXX@domain.com:
+[29/May/2016:11:22:10]    - skipped: A Mailwizz list #1
+[29/May/2016:11:22:10]    - skipped: A Mailwizz list #2
+[29/May/2016:11:22:11]   Interspire: Skipping recipient XXX@domain.com - no subscribed lists returned
+....
+[29/May/2016:11:22:12] Completed bounce processing! Total records=4, processed=4, skipped=0
+```
+
+
 
 
