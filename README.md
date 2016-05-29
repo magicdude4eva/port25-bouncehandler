@@ -121,4 +121,8 @@ The processing of a PowerMTA file is quite similar, with the only addition that 
 ...
 ```
 
+# Port25 automatic processing
+:warning: I can not help you with configuration/setup issues when it comes to PowerMTA. I have extensive experience, but each setup varies, although the basic principles remain the same.
+
+
 
