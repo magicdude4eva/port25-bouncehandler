@@ -115,6 +115,7 @@ function Interspire_getLists() {
 	curl_setopt($ch, CURLOPT_TIMEOUT, ENDPOINT_TIMEOUT);
 	curl_setopt($ch, CURLOPT_POSTFIELDS, $xml);
 	$result = curl_exec($ch);
+	curl_close ($ch);
     
 	if ($result === false || is_null($result) || empty($result)) {
 		$log->lwrite('  Interspire: Can not access Interspire to get Interspire Lists!');
@@ -144,6 +145,7 @@ function Interspire_postXMLData($xml) {
 	curl_setopt($ch, CURLOPT_TIMEOUT, ENDPOINT_TIMEOUT);
 	curl_setopt($ch, CURLOPT_POSTFIELDS, $xml);
 	$result = curl_exec($ch);
+	curl_close ($ch);
 	
 	if ($result === false || is_null($result) || empty($result))
     	return null;
@@ -179,6 +181,8 @@ function Interspire_getAllListsForEmailAddress($email) {
     curl_setopt($ch, CURLOPT_TIMEOUT, ENDPOINT_TIMEOUT);
     curl_setopt($ch, CURLOPT_POSTFIELDS, $xml);
     $result = curl_exec($ch);
+    curl_close ($ch);
+
     if ($result === false || is_null($result) || empty($result))
     	return null;
     

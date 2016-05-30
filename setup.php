@@ -163,7 +163,7 @@ public static function testEndpointURL($endpointURL) {
 
 	$httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 
-	if ($httpCode != 200) {
+	if ($httpCode != 200 && $httpCode != 301 && $httpCode != 302) {
 		$log->lwrite('   Failed connecting to ' . $endpointURL . ', error=' . $httpCode);
 		return false;
 	}
