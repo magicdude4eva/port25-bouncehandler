@@ -77,8 +77,10 @@ function MailWizz_unsubscribeRecipient($recipient) {
 	global $log, $MailWizzEndPoint, $MAILWIZZ_HANDLER_ENABLED;
 	
 	if ($MAILWIZZ_HANDLER_ENABLED == false) {
-		return;
+		return false;
 	}
+
+	$unsubscribeSuccess = false;
 
 	// Check if subscriber exists
 	$response = $MailWizzEndPoint->emailSearchAllLists($recipient, $pageNumber = 1, $perPage = 30);
@@ -89,6 +91,7 @@ function MailWizz_unsubscribeRecipient($recipient) {
 			if ($subscription['status'] != "unsubscribed") {
 				$unsubscriberesponse = $MailWizzEndPoint->unsubscribe($subscription['list']['list_uid'], $subscription['subscriber_uid']);
 				$log->lwrite('   - ' . $unsubscriberesponse->body['status'] . ': ' . $subscription['list']['name']);
+				$unsubscribeSuccess = true;
 			} else {
 				$log->lwrite('   - skipped: ' . $subscription['list']['name']);
 			}
@@ -101,5 +104,5 @@ function MailWizz_unsubscribeRecipient($recipient) {
 		}
 	}
 
-    return ; 
+    return $unsubscribeSuccess; 
 }

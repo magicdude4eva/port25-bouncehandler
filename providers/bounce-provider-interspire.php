@@ -69,7 +69,7 @@ function Interspire_unsubscribeRecipient($recipient) {
 	global $log, $apiInterspireListIDs, $INTERSPIRE_HANDLER_ENABLED;
 	
 	if ($INTERSPIRE_HANDLER_ENABLED == false) {
-		return;
+		return false;
 	}
 
 	// Get the interspire lists
@@ -79,7 +79,7 @@ function Interspire_unsubscribeRecipient($recipient) {
     
 	if (is_null($apiInterspireListIDs) || empty($apiInterspireListIDs)) {
         $log->lwrite('  Interspire: Unable to unsubscribe user ' . $recipient . ', Interspire lists are empy!');
-        return;
+        return false;
     }
     
     // Get all lists for email recipient
@@ -87,7 +87,7 @@ function Interspire_unsubscribeRecipient($recipient) {
 
 	if (is_null($emailLists) || empty($emailLists)) {
         $log->lwrite('  Interspire: Skipping recipient ' . $recipient . ' - no subscribed lists returned');
-        return;
+        return false;
 	}
 	
 	// Iterate through users lists and unsubscribe
@@ -95,7 +95,7 @@ function Interspire_unsubscribeRecipient($recipient) {
 		$log->lwrite('   - Unsubscribe user ' . $recipient . ' from list=' . $listid . ', status=' . Interspire_unsubscribeSubscriber($recipient, $listid));
 	}
 
-    return ; 
+    return true; 
 } 
 
 // Get Interspire lists - this is needed to individually unsubscribe users
