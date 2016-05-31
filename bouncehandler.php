@@ -42,7 +42,7 @@
  * - In Port25 add the following accounting record:
    <acct-file | /usr/bin/php /opt/pmta/bouncehandler/bouncehandler.php>
       records b
-      type,timeQueued,bounceCat,vmta,orig,rcpt,srcMta,dlvSourceIp,jobId,dsnStatus,dsnMta
+      type,timeQueued,bounceCat,vmta,orig,rcpt,srcMta,dlvSourceIp,jobId,dsnStatus,dsnMta,dsnDiag
     </acct-file>
     
     Within code we will refer to the record as follows:
@@ -57,6 +57,7 @@
     jobId         = bounceRecord[8]   = job ID for the message, if any
     dsnStatus     = bounceRecord[9]   = DSN status for the recipient to which it refers
     dsnMta        = bounceRecord[10]  = DSN remote MTA for the recipient to which it refers
+    dsnDiag       = bounceRecord[11]  = DSN diagnostic string for the recpient to which it refers
  * 
  *  USAGE - Port25 PowerMTA
  *  - Simply create the directory /opt/pmta/bouncehandler and make sure that PMTA has execute permissions

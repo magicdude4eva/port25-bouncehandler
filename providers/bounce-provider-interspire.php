@@ -92,7 +92,7 @@ function Interspire_unsubscribeRecipient($recipient) {
 	
 	// Iterate through users lists and unsubscribe
 	foreach ($emailLists as $listid) {
-		$log->lwrite('   - Unsubscribe user ' . $recipient . ' from list=' . $listid . ', status=' . Interspire_unsubscribeSubscriber($recipient, $listid));
+		$log->lwrite('   Interspire: Unsubscribe user ' . $recipient . ' from list=' . $listid . ', status=' . Interspire_unsubscribeSubscriber($recipient, $listid));
 	}
 
     return true; 

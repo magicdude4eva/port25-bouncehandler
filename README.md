@@ -134,7 +134,7 @@ My suggestion is that you first start off with manual processing, by just adding
     move-interval 5m
     max-size 500M
     records b
-    record-fields b timeQueued,bounceCat,vmta,orig,rcpt,srcMta,dlvSourceIp,jobId,dsnStatus,dsnMta
+    record-fields b timeQueued,bounceCat,vmta,orig,rcpt,srcMta,dlvSourceIp,jobId,dsnStatus,dsnMta,dsnDiag
 </acct-file>
 ```
 
@@ -160,6 +160,7 @@ dlvSourceIp | bounceRecord[7] | local IP address PowerMTA used for delivery
 jobId | bounceRecord[8] | job ID for the message, if any
 dsnStatus | bounceRecord[9] | DSN status for the recipient to which it refers
 dsnMta | bounceRecord[10] | DSN remote MTA for the recipient to which it refers
+dsnDiag | bounceRecord[11] | DSN diagnostic string for the recpient to which it refers
 
 You can then run the bounce-processing manually:
 ```
@@ -173,7 +174,7 @@ Switching to automatic processing is quite simple, you adjust your current recor
 ```
 <acct-file | /usr/bin/php /opt/pmta/bouncehandler/bouncehandler.php>
     records b
-    record-fields b timeQueued,bounceCat,vmta,orig,rcpt,srcMta,dlvSourceIp,jobId,dsnStatus,dsnMta
+    record-fields b timeQueued,bounceCat,vmta,orig,rcpt,srcMta,dlvSourceIp,jobId,dsnStatus,dsnMta,dsnDiag
 </acct-file>
 ```
 
