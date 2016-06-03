@@ -36,6 +36,9 @@ $log->lwrite('Bounce-provider: Interspire, initialising');
 // **** Initialise Interspire
 $apiInterspireListIDs = [];
 $INTERSPIRE_HANDLER_ENABLED = false;
+$INTERSPIRE_LIST_CHECK_ENABLED = false;
+$INTERSPIRE_LIST_TTL = 600; // in seconds
+$INTERSPIRE_LAST_LIST_REFRESH = microtime(true);
 
 if (defined('INTERSPIRE_API_KEY') && INTERSPIRE_API_KEY && 
     defined('INTERSPIRE_ENDPOINT_URL') && INTERSPIRE_ENDPOINT_URL &&
@@ -43,13 +46,14 @@ if (defined('INTERSPIRE_API_KEY') && INTERSPIRE_API_KEY &&
     $log->lwrite('   Endpoint-URL=' . INTERSPIRE_ENDPOINT_URL);
 
     if (!BounceUtility::testEndpointURL(INTERSPIRE_ENDPOINT_URL)) {
-        return;
+      return;
     }
 
     $apiInterspireListIDs = implode(',', Interspire_getLists());
     
     if (is_null($apiInterspireListIDs) || empty($apiInterspireListIDs)) {
         $log->lwrite('   Skipping Interspire, no contact-lists returned');
+	$INTERSPIRE_LIST_CHECK_ENABLED = true;
     } else {
         $log->lwrite('   Interspire enabled with lists=' . $apiInterspireListIDs);
     	$INTERSPIRE_HANDLER_ENABLED = true;
@@ -66,10 +70,32 @@ $log->lwrite('Bounce-provider: Interspire, complete');
 // INTERSPIRE FUNCTIONS
 // Handle the unsubscription of a recipient
 function Interspire_unsubscribeRecipient($recipient) { 
-	global $log, $apiInterspireListIDs, $INTERSPIRE_HANDLER_ENABLED;
+	global $log, $apiInterspireListIDs, $INTERSPIRE_HANDLER_ENABLED, $INTERSPIRE_LIST_CHECK_ENABLED, $INTERSPIRE_LIST_TTL, $INTERSPIRE_LAST_LIST_REFRESH;
+
+	// Let's check the last time we refreshed the list
+	$timediff = microtime(true) - $INTERSPIRE_LAST_LIST_REFRESH;
+
+	if ($timediff > $INTERSPIRE_LIST_TTL) {
+	  $INTERSPIRE_LIST_CHECK_ENABLED = true;
+	}
+
+	// We will refresh the Interspire lists
+	if ($INTERSPIRE_LIST_CHECK_ENABLED == true) {
+	  $tempListIDs = implode(',', Interspire_getLists());
+	  $INTERSPIRE_LAST_LIST_REFRESH = microtime(true);
+
+	  if (!is_null($tempListIDs) && !empty($tempListIDs)) {
+            $log->lwrite('   Interspire refreshed lists=' . $apiInterspireListIDs);
+	    $apiInterspireListIDs = $tempListIDs;
+	    $INTERSPIRE_LIST_CHECK_ENABLED = false;
+	    $INTERSPIRE_HANDLER_ENABLED = true;
+	  } else {
+            $log->lwrite('   Interspire refreshing lists failed! Using old lists=' . $apiInterspireListIDs);
+	  }
+	}
 	
 	if ($INTERSPIRE_HANDLER_ENABLED == false) {
-		return false;
+	  return false;
 	}
 
 	// Get the interspire lists
@@ -78,7 +104,7 @@ function Interspire_unsubscribeRecipient($recipient) {
     }
     
 	if (is_null($apiInterspireListIDs) || empty($apiInterspireListIDs)) {
-        $log->lwrite('  Interspire: Unable to unsubscribe user ' . $recipient . ', Interspire lists are empy!');
+        $log->lwrite('   Interspire: Unable to unsubscribe user ' . $recipient . ', Interspire lists are empy!');
         return false;
     }
     
@@ -86,7 +112,7 @@ function Interspire_unsubscribeRecipient($recipient) {
     $emailLists = Interspire_getAllListsForEmailAddress($recipient);
 
 	if (is_null($emailLists) || empty($emailLists)) {
-        $log->lwrite('  Interspire: Skipping recipient ' . $recipient . ' - no subscribed lists returned');
+        $log->lwrite('   Interspire: Skipping recipient ' . $recipient . ' - no subscribed lists returned');
         return false;
 	}
 	
@@ -181,7 +207,7 @@ function Interspire_getAllListsForEmailAddress($email) {
     curl_setopt($ch, CURLOPT_TIMEOUT, ENDPOINT_TIMEOUT);
     curl_setopt($ch, CURLOPT_POSTFIELDS, $xml);
     $result = curl_exec($ch);
-    curl_close ($ch);
+	curl_close ($ch);
 
     if ($result === false || is_null($result) || empty($result))
     	return null;
@@ -217,4 +243,5 @@ function Interspire_unsubscribeSubscriber($email, $list_id = 1) {
 		
     return Interspire_postXMLData($xml);
 }
+
 
