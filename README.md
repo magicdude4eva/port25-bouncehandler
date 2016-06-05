@@ -189,11 +189,13 @@ Ensure that the bouncehandler logs the startup-messages in it's log-file. If thi
 Port25 is capable of processing feedback loop (FBL) reports. In our case we have automated the FBL processing, where Port25 receives the FBL report, then pipes it into our bouncehandler.php which then calls a feedback-loop processor. We automatically remove any reported email from all systems and notify our Postmaster team via email.
 
 For the setup to work, the following is required:
-1. Create a FBL domain `fbl.example.com`
-2. Create a MX record for `fbl.example.com` which points to your Port25 server - i.e. `fbl.example.com MX 1 mailserver.example.com`
-3. Configure the `feedback-loop-processor` in Port25 and list any addresses you accept for FBL reports:
-```
-<feedback-loop-processor>
+
+- Create a FBL domain `fbl.example.com`
+
+- Create a MX record for `fbl.example.com` which points to your Port25 server - i.e. `fbl.example.com MX 1 mailserver.example.com`
+
+- Configure the `feedback-loop-processor` in Port25 and list any addresses you accept for FBL reports:
+```<feedback-loop-processor>
     deliver-unmatched-email no
     deliver-matched-email no # default: no 
 
@@ -204,12 +206,12 @@ For the setup to work, the following is required:
     </address-list>
 </feedback-loop-processor>
 ```
-4. Configure for which domains / addresses you allow inbound mail:
+- Configure for which domains / addresses you allow inbound mail:
 ```
 relay-domain fbl.example.com
 relay-address abuse@example.com
 ```
-5. Configure your accounting file to accept FBL records (note that we use `--logfile` to write to a different log-file:
+- Configure your accounting file to accept FBL records (note that we use `--logfile` to write to a different log-file:
 ```
 <acct-file |/usr/bin/php /opt/pmta/bouncehandler/bouncehandler.php --logfile=/var/log/pmta/fbl-processor.log>
     records feedback-loop
@@ -217,8 +219,6 @@ relay-address abuse@example.com
     record-fields f *, header_subject, header_BatchId, header_Message-Id, header_List-Unsubscribe
 </acct-file>
 ```
-
-6. Adjust the `feedback-loop-processor.php` to according to your requirements
-
-7. Register your address `abuse@fbl.example.com` with the various FBL lists [Word To The Wise - ISP Summary Information](http://wiki.wordtothewise.com/ISP_Summary_Information)
+- Adjust the `feedback-loop-processor.php` to according to your requirements
+- Register your address `abuse@fbl.example.com` with the various FBL lists [Word To The Wise - ISP Summary Information](http://wiki.wordtothewise.com/ISP_Summary_Information)
 
