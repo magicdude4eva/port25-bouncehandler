@@ -31,12 +31,12 @@
  */
 
 // Logging configuration. 1=log to console / 0=log to file
-define("LOG_CONSOLE_MODE",          0);
-define("LOG_FILE",                  "/var/log/pmta/pmta-bounce-handler.log");
+$LOG_CONSOLE_MODE = 0;
+$LOG_FILE         = "/var/log/pmta/pmta-bounce-handler.log";
 
 // Handle the following bounce-categories only
 // Leave empty to handle all bounce-categories
-$bounceCategories = array("bad-mailbox","bad-domain","routing-errors","inactive-mailbox");
+$bounceCategories = array("bad-mailbox","bad-domain","routing-errors","inactive-mailbox","spam-related");
 
 
 // ------------------------------------------------------------------------------------------------------
@@ -72,10 +72,25 @@ define("ENDPOINT_TIMEOUT",          30);
 // Use UTC as default
 date_default_timezone_set('UTC');
   
-// Logging class initialization
+// Initialise options via command-line
+$options = getopt("dl::", array("debug", "logfile::"));
+if (!empty($options)) {
+  foreach (array_keys($options) as $option) {
+    switch ($option) {
+      case 'd':
+      case 'debug':
+        $LOG_CONSOLE_MODE=1;
+        break;
+      case 'l':
+      case 'logfile':
+        $LOG_FILE=$options[$option];
+        break;
+    }
+  }
+}// Logging class initialization
 $log = new Logging();
-$log->ldebug(LOG_CONSOLE_MODE);
-$log->lfile(LOG_FILE);
+$log->ldebug($LOG_CONSOLE_MODE);
+$log->lfile($LOG_FILE);
 
 $log->lwrite('------------------------------------------------------------------');
 $log->lwrite('Port25 PowerMTA bounce-handler');
@@ -87,7 +102,8 @@ $log->lwrite('Handling bounce categories=' . (is_null($bounceCategories) || empt
 // Initialise bounce providers
 require_once dirname(__FILE__) . '/providers/bounce-provider-interspire.php';
 require_once dirname(__FILE__) . '/providers/bounce-provider-mailwizz.php';
-
+//require_once dirname(__FILE__) . '/providers/bounce-provider-transactinal.php'; -- your own transactional provider
+//require_once dirname(__FILE__) . '/providers/feedback-loop-processor.php'; -- your own FBL processor
 
 // ========================================================================================================
 // LOGGING CLASS
@@ -143,24 +159,19 @@ class Logging {
 }
 // LOGGING CLASS
 // ========================================================================================================
-
 class BounceUtility {
-
 // Test if URL is available
 public static function testEndpointURL($endpointURL) {
 	global $log;
-	
 	$ch = curl_init($endpointURL);
 	curl_setopt($ch,  CURLOPT_RETURNTRANSFER, TRUE);
 	curl_setopt($ch, CURLOPT_TIMEOUT, 5);
-
 	$result = curl_exec($ch);
 
 	if ($result === false || is_null($result) || empty($result)) {
 		$log->lwrite('   Failed connecting to ' . $endpointURL . ', check conncitivity!');
     	return false;
 	}
-
 	$httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 
 	if ($httpCode != 200 && $httpCode != 301 && $httpCode != 302) {
@@ -170,6 +181,4 @@ public static function testEndpointURL($endpointURL) {
 
 	return true;
 }
-
-
 }

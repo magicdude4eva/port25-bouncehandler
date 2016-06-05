@@ -69,6 +69,11 @@ You can manage bulk-unsubscribes via standalone. The only pre-requisite is a CSV
 
 :warning: With Standalone processing we will **always** unsubscribe from all configured providers, so make sure that your CSV file is correct. We do however log from which lists a recipient is unsubscribed, so in case something goes wrong, you can find out which addresses are affected.
 
+**Command-line options**
+* __--debug__: Turns on console mode and does not log to file - useful for debugging
+* __--logfile=/var/log/pmta/bounce-handler.log__: Full path to the log-file. If run via Port25, the user `pmta` needs to have write-access to the file.
+
+
 To run the standalone processing you simply pipe the CSV file into the bounce-handler:
 ```
 cat bounce.csv | /usr/bin/php ./bouncehandler/bouncehandler.php
@@ -179,3 +184,41 @@ Switching to automatic processing is quite simple, you adjust your current recor
 ```
 
 Ensure that the bouncehandler logs the startup-messages in it's log-file. If this does not happen, then PowerMTA is not able to run the PHP due to possible permission errors (ownership of the /opt/pmta/bouncehandler folder or no executable permissions of the `bouncehandler.php`).
+
+# Port25 feedback loop processing
+Port25 is capable of processing feedback loop (FBL) reports. In our case we have automated the FBL processing, where Port25 receives the FBL report, then pipes it into our bouncehandler.php which then calls a feedback-loop processor. We automatically remove any reported email from all systems and notify our Postmaster team via email.
+
+For the setup to work, the following is required:
+1. Create a FBL domain `fbl.example.com`
+2. Create a MX record for `fbl.example.com` which points to your Port25 server - i.e. `fbl.example.com MX 1 mailserver.example.com`
+3. Configure the `feedback-loop-processor` in Port25 and list any addresses you accept for FBL reports:
+```
+<feedback-loop-processor>
+    deliver-unmatched-email no
+    deliver-matched-email no # default: no 
+
+    <address-list>
+      address /abuse@*/
+      address /abuse@*/
+      address /unsubscribe@*/
+    </address-list>
+</feedback-loop-processor>
+```
+4. Configure for which domains / addresses you allow inbound mail:
+```
+relay-domain fbl.example.com
+relay-address abuse@example.com
+```
+5. Configure your accounting file to accept FBL records (note that we use `--logfile` to write to a different log-file:
+```
+<acct-file |/usr/bin/php /opt/pmta/bouncehandler/bouncehandler.php --logfile=/var/log/pmta/fbl-processor.log>
+    records feedback-loop
+    map-header-to-field f header_X-HmXmrOriginalRecipient rcpt  # hotmail recipient
+    record-fields f *, header_subject, header_BatchId, header_Message-Id, header_List-Unsubscribe
+</acct-file>
+```
+
+6. Adjust the `feedback-loop-processor.php` to according to your requirements
+
+7. Register your address `abuse@fbl.example.com` with the various FBL lists [Word To The Wise - ISP Summary Information](http://wiki.wordtothewise.com/ISP_Summary_Information)
+

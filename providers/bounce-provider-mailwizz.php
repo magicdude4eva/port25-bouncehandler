@@ -39,32 +39,31 @@ $MAILWIZZ_HANDLER_ENABLED = false;
 if (defined('MAILWIZZ_API_PUBLIC_KEY') && MAILWIZZ_API_PUBLIC_KEY && 
     defined('MAILWIZZ_API_PRIVATE_KEY') && MAILWIZZ_API_PRIVATE_KEY &&
     defined('MAILWIZZ_ENDPOINT_URL') && MAILWIZZ_ENDPOINT_URL) {
-    $log->lwrite('   Endpoint-URL=' . MAILWIZZ_ENDPOINT_URL);
-
-    if (!BounceUtility::testEndpointURL(MAILWIZZ_ENDPOINT_URL)) {
-      return;
-    }
-
-    require_once dirname(__FILE__) . '/MailWizzApi/Autoloader.php';
+  $log->lwrite('   Endpoint-URL=' . MAILWIZZ_ENDPOINT_URL);
     
-    MailWizzApi_Autoloader::register();
+  if (!BounceUtility::testEndpointURL(MAILWIZZ_ENDPOINT_URL)) {
+    return;
+  }
     
-    // configuration object
-    $config = new MailWizzApi_Config(array('apiUrl' => MAILWIZZ_ENDPOINT_URL, 'publicKey' => MAILWIZZ_API_PUBLIC_KEY, 'privateKey' => MAILWIZZ_API_PRIVATE_KEY,
-      'components' => array('cache' => array('class'     => 'MailWizzApi_Cache_File',
-        'filesPath' => dirname(__FILE__) . '/MailWizzApi/Cache/data/cache', // make sure it is writable by webserver
-       ) ), ));
+  require_once dirname(__FILE__) . '/MailWizzApi/Autoloader.php';
+    
+  MailWizzApi_Autoloader::register();
+    
+  // configuration object
+  $config = new MailWizzApi_Config(array('apiUrl' => MAILWIZZ_ENDPOINT_URL, 'publicKey' => MAILWIZZ_API_PUBLIC_KEY, 'privateKey' => MAILWIZZ_API_PRIVATE_KEY,
+    'components' => array('cache' => array('class'     => 'MailWizzApi_Cache_File',
+    'filesPath' => dirname(__FILE__) . '/MailWizzApi/Cache/data/cache', // make sure it is writable by webserver
+    ) ), ));
        
-    // now inject the configuration and we are ready to make api calls
-    MailWizzApi_Base::setConfig($config);
+  // now inject the configuration and we are ready to make api calls
+  MailWizzApi_Base::setConfig($config);
+  $MailWizzEndPoint = new MailWizzApi_Endpoint_ListSubscribers();
     
-    $MailWizzEndPoint = new MailWizzApi_Endpoint_ListSubscribers();
-    
-    $log->lwrite('   MailWizz enabled!');
+  $log->lwrite('   MailWizz enabled!');
 
-    $MAILWIZZ_HANDLER_ENABLED = true;
+  $MAILWIZZ_HANDLER_ENABLED = true;
 } else {
-$log->lwrite('   Skipped - not configured!');
+  $log->lwrite('   Skipped - not configured!');
 }
 
 $log->lwrite('Bounce-provider: MailWizz, complete');
@@ -74,35 +73,35 @@ $log->lwrite('Bounce-provider: MailWizz, complete');
 // MAILWIZZ FUNCTIONS
 // Handle MailWizz unsubscribe
 function MailWizz_unsubscribeRecipient($recipient) { 
-    global $log, $MailWizzEndPoint, $MAILWIZZ_HANDLER_ENABLED;
+  global $log, $MailWizzEndPoint, $MAILWIZZ_HANDLER_ENABLED;
 	
-    if ($MAILWIZZ_HANDLER_ENABLED == false) {
-      return false;
-    }
+  if ($MAILWIZZ_HANDLER_ENABLED == false) {
+    return false;
+  }
+    
+  $unsubscribeSuccess = false;
 
-    $unsubscribeSuccess = false;
-
-    // Check if subscriber exists
-    $response = $MailWizzEndPoint->emailSearchAllLists($recipient, $pageNumber = 1, $perPage = 30);
+  // Check if subscriber exists
+  $response = $MailWizzEndPoint->emailSearchAllLists($recipient, $pageNumber = 1, $perPage = 30);
 	
-    if ($response->body['status'] == "success" && $response->body['data']['count'] > 0) {
-      $log->lwrite('   MailWizz: unsubscribe for ' . $recipient . ':');
-      foreach ($response->body['data']['records'] as $subscription) {
-        if ($subscription['status'] != "unsubscribed") {
-          $unsubscriberesponse = $MailWizzEndPoint->unsubscribe($subscription['list']['list_uid'], $subscription['subscriber_uid']);
-          $log->lwrite('   - ' . $unsubscriberesponse->body['status'] . ': ' . $subscription['list']['name']);
-          $unsubscribeSuccess = true;
-        } else {
-          $log->lwrite('   - skipped: ' . $subscription['list']['name']);
-        }
-      }
-    } else {
-      if ($response->body['status'] != "success") {
-        $log->lwrite('   MailWizz: Failed looking up record ' . $recipient . ' with status=' . $response->body['status']);
-      } else if ($response->body['data']['count'] == 0) {
-        $log->lwrite('   MailWizz: Skipping ' . $recipient . ', already unsubscribed!');
+  if ($response->body['status'] == "success" && $response->body['data']['count'] > 0) {
+    $log->lwrite('   MailWizz: unsubscribe for ' . $recipient . ':');
+    foreach ($response->body['data']['records'] as $subscription) {
+      if ($subscription['status'] != "unsubscribed") {
+        $unsubscriberesponse = $MailWizzEndPoint->unsubscribe($subscription['list']['list_uid'], $subscription['subscriber_uid']);
+        $log->lwrite('   - ' . $unsubscriberesponse->body['status'] . ': ' . $subscription['list']['name']);
+        $unsubscribeSuccess = true;
+      } else {
+        $log->lwrite('   - skipped: ' . $subscription['list']['name']);
       }
     }
+  } else {
+    if ($response->body['status'] != "success") {
+      $log->lwrite('   MailWizz: Failed looking up record ' . $recipient . ' with status=' . $response->body['status']);
+    } else if ($response->body['data']['count'] == 0) {
+      $log->lwrite('   MailWizz: Skipping ' . $recipient . ', already unsubscribed!');
+    }
+  }
 
-    return $unsubscribeSuccess; 
+  return $unsubscribeSuccess; 
 }

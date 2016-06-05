@@ -72,11 +72,15 @@
  *  - If 'LOG_CONSOLE_MODE' is set to '0' logging goes to /var/log/pmta/pmta-bounce-handler.log (or the current directory if the file can not be written)
  */
  
-// Only adjust the offsets below if you create a different accounting file
-define("PORT25_OFFSET_BOUNCE_CAT",         2); // bounceCat
-define("PORT25_OFFSET_VMTA",               3); // vmta
-define("PORT25_OFFSET_SOURCE_EMAIL",       4); // orig
-define("PORT25_OFFSET_RECIPIENT",          5); // rcpt
+// Bounce-Record offsets: Only adjust the offsets below if you create a different accounting file
+define("PORT25_OFFSET_BOUNCE_BOUNCE_CAT",         2); // bounceCat
+define("PORT25_OFFSET_BOUNCE_VMTA",               3); // vmta
+define("PORT25_OFFSET_BOUNCE_SOURCE_EMAIL",       4); // orig
+define("PORT25_OFFSET_BOUNCE_RECIPIENT",          5); // rcpt
+
+// Feedback Loop Record offsets: Only adjust the offsets below if you create a different accounting file
+define("PORT25_OFFSET_FEEDBACK_SOURCE_EMAIL",     7); // orig
+define("PORT25_OFFSET_FEEDBACK_RECIPIENT",        8); // rcp
 
 
 // Initialise Setup and configuration
@@ -93,74 +97,90 @@ $log->lwrite('Starting bounce processing');
 
 while(( $bounceRecord = fgetcsv(STDIN,4096)) !== FALSE ) {
 
-	++$totalRecords;
+  ++$totalRecords;
 
-	// If the line is empty or it is the header line, we skip
-	if(!$bounceRecord || $bounceRecord[0]=="type") {
-	  ++$totalRecordsSkipped;
-	  continue;
-	}
+  // If the line is empty or it is the header line, we skip
+  if (!$bounceRecord || $bounceRecord[0]=="type") {
+    ++$totalRecordsSkipped;
+    continue;
+  }
 	
-	$STANDALONE_MODE = false;
-	$recipient = null;
+  $STANDALONE_MODE = false;$BOUNCE_MODE = false;$FEEDBACK_LOOP_MODE = false;
+  $recipient = null;
 	
-	// Let's check if this is standalone mode - i.e. we get a CSV and the first column is the email address to handle as the bounce
-	// If the first record is not an email we assume it is a bounce record
-	if (filter_var($bounceRecord[0], FILTER_VALIDATE_EMAIL)) {
-	  $STANDALONE_MODE = true;
-	  $recipient = $bounceRecord[0];
-	} else if (filter_var($bounceRecord[PORT25_OFFSET_RECIPIENT], FILTER_VALIDATE_EMAIL)) {
-	  $recipient = $bounceRecord[PORT25_OFFSET_RECIPIENT];
-	}
-	
-	// Only handle valid bounce categories. We skip any bounce-category which does not match
-	if ($STANDALONE_MODE == false && !in_array($bounceRecord[PORT25_OFFSET_BOUNCE_CAT], $bounceCategories)) {
-	  ++$totalRecordsSkipped;
-	  continue;
-	}
-	
-	// Invalid/skipped record
-	if (is_null($recipient) || empty($recipient) || !filter_var($recipient, FILTER_VALIDATE_EMAIL)) {
-	  ++$totalRecordsSkipped;
-	  continue;
-	}
-	
-	// In Standalone mode, we unsubscribe bounces from all systems
-	if ($STANDALONE_MODE == true) {
-	  MailWizz_unsubscribeRecipient($recipient);
-	  Interspire_unsubscribeRecipient($recipient);
-	  ++$totalRecordsProcessed;
-	  continue;
-	}
-	
-	// The section below is purely for Port25 pipe-processing
-	$log->lwrite('Bounce: ' . $bounceRecord[PORT25_OFFSET_BOUNCE_CAT] . ' from=' . $bounceRecord[PORT25_OFFSET_SOURCE_EMAIL] . ' via ' . $bounceRecord[PORT25_OFFSET_VMTA] . '/' . $bounceRecord[PORT25_OFFSET_RECIPIENT]);
+  // Let's check if this is standalone mode - i.e. we get a CSV and the first column is the email address to handle as the bounce
+  // If the first record is not an email we assume it is a bounce record
+  if (filter_var($bounceRecord[0], FILTER_VALIDATE_EMAIL)) {
+    $STANDALONE_MODE = true;$BOUNCE_MODE = true;
+    $recipient = $bounceRecord[0];
+  }
 
-	// If we have a transactional match, call the transactional webhook
-	if (in_array($bounceRecord[PORT25_OFFSET_SOURCE_EMAIL], $origTransactional)) {
-          // HANDLE YOUR OWN BOUNCES HERE
-	  ++$totalRecordsProcessed;
-	  continue;
-	}
+  // This is a bounce record
+  if ($STANDALONE_MODE == false && $bounceRecord[0]=="b" && filter_var($bounceRecord[PORT25_OFFSET_BOUNCE_RECIPIENT], FILTER_VALIDATE_EMAIL)) {
+    $recipient = $bounceRecord[PORT25_OFFSET_BOUNCE_RECIPIENT];
+    $BOUNCE_MODE = true;
+  }
+
+  // This is a feedback loop record
+  if ($STANDALONE_MODE == false && $bounceRecord[0]=="f" && filter_var($bounceRecord[PORT25_OFFSET_FEEDBACK_RECIPIENT], FILTER_VALIDATE_EMAIL)) {
+    $recipient = $bounceRecord[PORT25_OFFSET_FEEDBACK_RECIPIENT];
+    $FEEDBACK_LOOP_MODE = true;
+  }
+
+  // Only handle valid bounce categories. We skip any bounce-category which does not match
+  if ($STANDALONE_MODE == false && $BOUNCE_MODE == true && !in_array($bounceRecord[PORT25_OFFSET_BOUNCE_BOUNCE_CAT], $bounceCategories)) {
+    ++$totalRecordsSkipped;
+    continue;
+  }
 	
-	// Handle MailWizz bounces
-	if (in_array($bounceRecord[PORT25_OFFSET_SOURCE_EMAIL], $origMailWizzZA)) {
-	  MailWizz_unsubscribeRecipient($recipient);
-	  ++$totalRecordsProcessed;
-	  continue;
-	}
+  // Invalid/skipped record
+  if (is_null($recipient) || empty($recipient) || !filter_var($recipient, FILTER_VALIDATE_EMAIL)) {
+    ++$totalRecordsSkipped;
+    continue;
+  }
 	
-	// Handle Interspire bounces
-	if (in_array($bounceRecord[PORT25_OFFSET_SOURCE_EMAIL], $origInterspire)) {
-	  Interspire_unsubscribeRecipient($recipient);
-	  ++$totalRecordsProcessed;
-	  continue;
-	}
+  // In Standalone mode, we unsubscribe bounces from all systems
+  if ($STANDALONE_MODE == true) {
+    MailWizz_unsubscribeRecipient($recipient);
+    Interspire_unsubscribeRecipient($recipient);
+    ++$totalRecordsProcessed;
+    continue;
+  }
+  
+  // In Feedback mode, handle feedback record
+  if ($FEEDBACK_LOOP_MODE == true) {
+    // feedbackLoopEvent($recipient,$bounceRecord); - your own FBL processor
+    ++$totalRecordsProcessed;
+    continue;
+  }
+	
+  // The section below is purely for Port25 pipe-processing
+  $log->lwrite('Bounce: ' . $bounceRecord[PORT25_OFFSET_BOUNCE_BOUNCE_CAT] . ' from=' . $bounceRecord[PORT25_OFFSET_BOUNCE_SOURCE_EMAIL] . ' via ' . $bounceRecord[PORT25_OFFSET_BOUNCE_VMTA] . '/' . $bounceRecord[PORT25_OFFSET_BOUNCE_RECIPIENT]);
+
+  // If we have a transactional match, call the transactional webhook
+  if (in_array($bounceRecord[PORT25_OFFSET_BOUNCE_SOURCE_EMAIL], $origTransactional)) {
+    //Transactional_unsubscribeRecipient($recipient, $bounceRecord); - your own transactinal processor
+    ++$totalRecordsProcessed;
+    continue;
+  }
+	
+  // Handle MailWizz bounces
+  if (in_array($bounceRecord[PORT25_OFFSET_BOUNCE_SOURCE_EMAIL], $origMailWizzZA)) {
+    MailWizz_unsubscribeRecipient($recipient);
+    ++$totalRecordsProcessed;
+    continue;
+  }
+	
+  // Handle Interspire bounces
+  if (in_array($bounceRecord[PORT25_OFFSET_BOUNCE_SOURCE_EMAIL], $origInterspire)) {
+    Interspire_unsubscribeRecipient($recipient);
+    ++$totalRecordsProcessed;
+    continue;
+  }
 
 }
 
 $log->lwrite('Completed bounce processing! Total records=' . $totalRecords . ', processed=' . $totalRecordsProcessed . ', skipped=' . $totalRecordsSkipped);
-
 
 // close log file
 $log->lclose();
