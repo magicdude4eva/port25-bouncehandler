@@ -198,26 +198,26 @@ For the setup to work, the following is required:
 ```<feedback-loop-processor>
     deliver-unmatched-email no
     deliver-matched-email no # default: no 
+    forward-errors-to postmaster@example.com
+    forward-unmatched-to postmaster@example.com
 
     <address-list>
-      address /abuse@*/
-      address /abuse@*/
-      address /unsubscribe@*/
+      address /abuse@fbl.example.com/
     </address-list>
 </feedback-loop-processor>
 ```
 - Configure for which domains / addresses you allow inbound mail:
 ```
-relay-domain fbl.example.com
-relay-address abuse@example.com
+relay-address abuse@fbl.example.com
 ```
 - Configure your accounting file to accept FBL records (note that we use `--logfile` to write to a different log-file:
 ```
 <acct-file |/usr/bin/php /opt/pmta/bouncehandler/bouncehandler.php --logfile=/var/log/pmta/fbl-processor.log>
     records feedback-loop
     map-header-to-field f header_X-HmXmrOriginalRecipient rcpt  # hotmail recipient
-    record-fields f *, header_subject, header_BatchId, header_Message-Id, header_List-Unsubscribe
+    record-fields f *, header_subject, header_BatchId, header_Message-Id, header_List-Unsubscribe, header_List-Id, header_X-Mw-Subscriber-Uid
 </acct-file>
+
 ```
 - Adjust the `feedback-loop-processor.php` to according to your requirements
 - Register your address `abuse@fbl.example.com` with the various FBL lists [Word To The Wise - ISP Summary Information](http://wiki.wordtothewise.com/ISP_Summary_Information)
