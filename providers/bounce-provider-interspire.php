@@ -94,7 +94,7 @@ function Interspire_unsubscribeRecipient($recipient) {
   }
 	
   if ($INTERSPIRE_HANDLER_ENABLED == false) {
-    return false;
+    return array(false, "Interspire not enabled! Check logs!");
   }
 
   // Get the interspire lists
@@ -104,7 +104,7 @@ function Interspire_unsubscribeRecipient($recipient) {
     
   if (is_null($apiInterspireListIDs) || empty($apiInterspireListIDs)) {
     $log->lwrite('   Interspire: Unable to unsubscribe user ' . $recipient . ', Interspire lists are empy!');
-    return false;
+    return array(false, "Interspire lists are empty");
   }
     
   // Get all lists for email recipient
@@ -112,15 +112,20 @@ function Interspire_unsubscribeRecipient($recipient) {
 
   if (is_null($emailLists) || empty($emailLists)) {
     $log->lwrite('   Interspire: Skipping recipient ' . $recipient . ' - no subscribed lists returned');
-    return false;
+    return array(true, "Skipped - not subscribed");
   }
+
+  $unsubMessage = "";
 	
   // Iterate through users lists and unsubscribe
   foreach ($emailLists as $listid) {
-    $log->lwrite('   Interspire: Unsubscribe user ' . $recipient . ' from list=' . $listid . ', status=' . Interspire_unsubscribeSubscriber($recipient, $listid));
+    $unsubStatus = Interspire_unsubscribeSubscriber($recipient, $listid);
+    $log->lwrite('   Interspire: Unsubscribe user ' . $recipient . ' from list=' . $listid . ', status=' . $unsubStatus);
+
+    $unsubMessage .= "List-" . $listid . "=" . $unsubStatus . ",";
   }
 
-  return true; 
+  return array(true, $unsubMessage); 
 } 
 
 // Get Interspire lists - this is needed to individually unsubscribe users

@@ -45,11 +45,24 @@ function feedbackLoopEvent($recipient, $feedbackLoopRecord) {
   global $log;
 
   $log->lwrite('FBL received from: ' . $feedbackLoopRecord[1] . ' for=' .  $feedbackLoopRecord[8] . ' via ' . $feedbackLoopRecord[8]);
-  
-  // Handle your unsubscribe processing here
-  //Transactional_unsubscribeRecipient($recipient, $feedbackLoopRecord);    
-  MailWizz_unsubscribeRecipient($recipient);
-  Interspire_unsubscribeRecipient($recipient);
+
+  // We check if we have the MailWizz header "List-Id" and "X-Mw-Subscriber-Uid" in the FBL, then we change the recipient
+  if (array_key_exists(20, $feedbackLoopRecord) && !is_null($feedbackLoopRecord[20]) && !empty($feedbackLoopRecord[20]) &&
+      array_key_exists(21, $feedbackLoopRecord) && !is_null($feedbackLoopRecord[21]) && !empty($feedbackLoopRecord[21])) {
+    $subscriberEmail = MailWizz_getSubscriber($feedbackLoopRecord[20], $feedbackLoopRecord[21]);
+
+    if ($subscriberEmail[0] == true) {
+      $log->lwrite('*** FBL record provided list-id=' . $feedbackLoopRecord[20] . ' and subscriberid=' . $feedbackLoopRecord[21] . ", using=" . $subscriberEmail[1]);
+      $recipient = $subscriberEmail[1];
+    }
+  }
+    
+  $unsub_mailwizz   = MailWizz_unsubscribeRecipient($recipient);
+
+  $unsub_interspire = Interspire_unsubscribeRecipient($recipient);
+
+  $unsubstatus = "<span title='" . $unsub_mailwizz[1] . "'>MailWizz=" . ($unsub_mailwizz[0] == true ? "OK":"Check") . "</span>"
+    . ", <span title='" . $unsub_interspire[1] . "'>Interspire=" . ($unsub_interspire[0] == true ? "OK":"Check") . "</span>";
 
   // Send the email using PHPMailer
   $mail = new PHPMailer();
@@ -70,7 +83,8 @@ function feedbackLoopEvent($recipient, $feedbackLoopRecord) {
   $mail->Body = '<h2>Port25 - Feedback Loop</h2>'
     . '<p>Port25 processed the following feedback loop complaint and the user was unsubscribed:</p>'
     . '<table rules="all" style="border-color: #666;border: 1px;width: 50%;" cellpadding="10">'
-    . '<tr style="background: #eee"><td style="width:20%"><strong>Reporter:</strong> </td><td style="width:70%"><strong>' . $feedbackLoopRecord[8] . '</strong></td></tr>'
+    . '<tr style="background: #eee"><td style="width:20%"><strong>Reporter:</strong> </td><td style="width:70%"><strong>' . $recipient . '</strong>'
+    . (strcmp($recipient, $feedbackLoopRecord[8]) !== 0 ? " / " . $feedbackLoopRecord[8] : "") . '</td></tr>'    
     . '<tr><td><strong>Received:</strong> </td><td>' . $feedbackLoopRecord[1]  . '</td></tr>'
     . '<tr><td><strong>Reported via:</strong> </td><td>' . $feedbackLoopRecord[5]  . '</td></tr>'
     . '<tr><td><strong>Reported IP:</strong> </td><td>' . $feedbackLoopRecord[2]  . '</td></tr>'
@@ -78,6 +92,7 @@ function feedbackLoopEvent($recipient, $feedbackLoopRecord) {
     . '<tr><td><strong>Feedback ID:</strong> </td><td>' . $feedbackLoopRecord[14]  . '</td></tr>'
     . '<tr><td><strong>Subject:</strong> </td><td>' . $feedbackLoopRecord[15]  . '</td></tr>'
     . '<tr><td><strong>Message Id:</strong> </td><td><pre>' . rtrim(ltrim($feedbackLoopRecord[18], '<'), '>')  . '</pre></td></tr>'
+    . '<tr><td><strong>Unsubscribe status:</strong> </td><td><pre>' . $unsubstatus . '</pre></td></tr>'
     . '<tr><td><strong>List unsubscribe:</strong> </td><td>' . rtrim(ltrim($feedbackLoopRecord[19], '<'), '>')  . '</td></tr>'
     . '</table>';
 

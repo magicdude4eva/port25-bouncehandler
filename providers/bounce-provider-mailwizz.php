@@ -76,10 +76,11 @@ function MailWizz_unsubscribeRecipient($recipient) {
   global $log, $MailWizzEndPoint, $MAILWIZZ_HANDLER_ENABLED;
 	
   if ($MAILWIZZ_HANDLER_ENABLED == false) {
-    return false;
+    return array(false, "MailWizz not enabled! Check logs!");
   }
     
   $unsubscribeSuccess = false;
+  $unsubMessage = "";
 
   // Check if subscriber exists
   $response = $MailWizzEndPoint->emailSearchAllLists($recipient, $pageNumber = 1, $perPage = 30);
@@ -89,19 +90,49 @@ function MailWizz_unsubscribeRecipient($recipient) {
     foreach ($response->body['data']['records'] as $subscription) {
       if ($subscription['status'] != "unsubscribed") {
         $unsubscriberesponse = $MailWizzEndPoint->unsubscribe($subscription['list']['list_uid'], $subscription['subscriber_uid']);
+        $unsubMessage .= $unsubscriberesponse->body['status'] . "=" . $subscription['list']['name'] . " ";
         $log->lwrite('   - ' . $unsubscriberesponse->body['status'] . ': ' . $subscription['list']['name']);
         $unsubscribeSuccess = true;
       } else {
         $log->lwrite('   - skipped: ' . $subscription['list']['name']);
+        $unsubMessage .= "skipped=" . $subscription['list']['name'] . " ";
+        $unsubscribeSuccess = true;
       }
     }
   } else {
     if ($response->body['status'] != "success") {
       $log->lwrite('   MailWizz: Failed looking up record ' . $recipient . ' with status=' . $response->body['status']);
+      $unsubscriberesponse = "Lookup failed with status=" . $response->body['status'];
     } else if ($response->body['data']['count'] == 0) {
       $log->lwrite('   MailWizz: Skipping ' . $recipient . ', already unsubscribed!');
+      $unsubscriberesponse = "Already unsubscribed!";
     }
   }
 
-  return $unsubscribeSuccess; 
+  return array($unsubscribeSuccess, $unsubMessage);
+
+}
+
+
+// Lookup recipient via MailWizz X-Mw-Subscriber-Uid and List-Id
+function MailWizz_getSubscriber($listID, $subscriberUID) { 
+  global $log, $MailWizzEndPoint, $MAILWIZZ_HANDLER_ENABLED;
+	
+  if ($MAILWIZZ_HANDLER_ENABLED == false) {
+    return array(false, null);
+  }
+
+  // Extract the list-id - sometimes we get "listid <some name>"
+  $mwListId = explode(" <", $listID, 2);
+
+  $response = $MailWizzEndPoint->getSubscriber($mwListId[0], $subscriberUID);
+
+  if ($response->body['status'] == "success" && !is_null($response->body['data']['record']['EMAIL']) && !empty($response->body['data']['record']['EMAIL'])) {
+    return array(true, $response->body['data']['record']['EMAIL']);
+  } else {
+    return array(false, null);
+  }
+
+  return array(false, null);
+
 }
