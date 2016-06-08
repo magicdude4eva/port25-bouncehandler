@@ -107,7 +107,7 @@ The Standalone processing can also be used to process PowerMTA files without usi
 
 Running a PowerMTA file in standalone processing is the same command as above:
 ```
-cat pmta-bounce-file.csv | /usr/bin/php ./bouncehandler/bouncehandler.php
+cat pmta-bounce-file.csv | /usr/bin/php ./bouncehandler/bouncehandler.php --debug
 ```
 
 Note that if your setup does not follow the recommendations for the `acct-file` and your columns are in different sequence, you will have to change the `PORT25_OFFSET_*`-constants in `bouncehandler.php`.
@@ -169,7 +169,7 @@ dsnDiag | bounceRecord[11] | DSN diagnostic string for the recpient to which it 
 
 You can then run the bounce-processing manually:
 ```
-cat /var/log/pmta/bounce-2016-05-29-0000.csv | /usr/bin/php /opt/pmta/bouncehandler/bouncehandler.php
+cat /var/log/pmta/bounce-2016-05-29-0000.csv | /usr/bin/php /opt/pmta/bouncehandler/bouncehandler.php --debug
 ```
 
 Once you are comfortable with this you can then switch into automatic processing.
@@ -195,7 +195,8 @@ For the setup to work, the following is required:
 - Create a MX record for `fbl.example.com` which points to your Port25 server - i.e. `fbl.example.com MX 1 mailserver.example.com`
 
 - Configure the `feedback-loop-processor` in Port25 and list any addresses you accept for FBL reports:
-```<feedback-loop-processor>
+```
+<feedback-loop-processor>
     deliver-unmatched-email no
     deliver-matched-email no # default: no 
     forward-errors-to postmaster@example.com
