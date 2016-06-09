@@ -216,10 +216,23 @@ relay-address abuse@fbl.example.com
 <acct-file |/usr/bin/php /opt/pmta/bouncehandler/bouncehandler.php --logfile=/var/log/pmta/fbl-processor.log>
     records feedback-loop
     map-header-to-field f header_X-HmXmrOriginalRecipient rcpt  # hotmail recipient
-    record-fields f *, header_subject, header_BatchId, header_Message-Id, header_List-Unsubscribe, header_List-Id, header_X-Mw-Subscriber-Uid
+    record-fields f *, header_subject, header_BatchId, header_Message-Id, header_List-Unsubscribe, header_List-Id, header_X-Mw-Subscriber-Uid, header_X-Mailer-LID, header_X-Mailer-RecptId
 </acct-file>
-
 ```
 - Adjust the `feedback-loop-processor.php` to according to your requirements
 - Register your address `abuse@fbl.example.com` with the various FBL lists [Word To The Wise - ISP Summary Information](http://wiki.wordtothewise.com/ISP_Summary_Information)
 
+## About the Port25 FBL record fields
+In addition to the standard FBL fields, we write out the following fields:
+
+* __header_X-HmXmrOriginalRecipient__: Outlook places the original recipient into a customer header, we map this back to `rcpt`
+* __header_subject__: We log the subject as it allows to identify the nature of the emil
+* __header_BatchId__: Typically the `x-job-id`
+* __header_Message-Id__: The unique message-id
+* __header_List-Unsubscribe__: The unsubscribe link - this might be useful to just post a HTTP-GET from Port25
+* __header_List-Id__: The `List-Id` - most mailers such as MailWizz use the standard header
+* __header_X-Mw-Subscriber-Uid__: The MailWizz Subscriber-UID. We use this to unsubscribe users from MailWizz
+* __header_X-Mailer-LID__: The list-id provided by Interspire
+* __header_X-Mailer-RecptId__: The Subscriber-UID provided by Interspire
+ 
+Some FBL providers (such as OpenSRS/ReturnPath) will anonymise the recipient-email address and in those cases we need to use the Subscriber-ID/List-ID to unsubscribe the user.
