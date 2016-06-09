@@ -44,7 +44,14 @@ $log->lwrite('Feedback-provider: complete');
 function feedbackLoopEvent($recipient, $feedbackLoopRecord) { 
   global $log;
 
-  $log->lwrite('FBL received from: ' . $feedbackLoopRecord[1] . ' for=' .  $feedbackLoopRecord[8] . ' via ' . $feedbackLoopRecord[8]);
+  $reportAgent = $feedbackLoopRecord[5];
+
+  // In case the report agent is emtpy and this is a Microsoft JMRP report, we construct our own agent
+  if ((is_null($reportAgent) || empty($reportAgent)) && $feedbackLoopRecord[4] == 'jmrp') {
+    $reportAgent = "Microsoft JMRP/" . $feedbackLoopRecord[11];
+  }
+
+  $log->lwrite('FBL received from: ' . $reportAgent . ' for=' .  $feedbackLoopRecord[8] . ' via ' . $feedbackLoopRecord[8]);
 
   // We check if we have the MailWizz header "List-Id" and "X-Mw-Subscriber-Uid" in the FBL, then we change the recipient
   if (array_key_exists(20, $feedbackLoopRecord) && !is_null($feedbackLoopRecord[20]) && !empty($feedbackLoopRecord[20]) &&
@@ -86,7 +93,7 @@ function feedbackLoopEvent($recipient, $feedbackLoopRecord) {
     . '<tr style="background: #eee"><td style="width:20%"><strong>Reporter:</strong> </td><td style="width:70%"><strong>' . $recipient . '</strong>'
     . (strcmp($recipient, $feedbackLoopRecord[8]) !== 0 ? " / " . $feedbackLoopRecord[8] : "") . '</td></tr>'    
     . '<tr><td><strong>Received:</strong> </td><td>' . $feedbackLoopRecord[1]  . '</td></tr>'
-    . '<tr><td><strong>Reported via:</strong> </td><td>' . $feedbackLoopRecord[5]  . '</td></tr>'
+    . '<tr><td><strong>Reported via:</strong> </td><td>' . $reportAgent . '</td></tr>'
     . '<tr><td><strong>Reported IP:</strong> </td><td>' . $feedbackLoopRecord[2]  . '</td></tr>'
     . '<tr><td><strong>Sender:</strong> </td><td>' . $feedbackLoopRecord[7]  . '</td></tr>'
     . '<tr><td><strong>Feedback ID:</strong> </td><td>' . $feedbackLoopRecord[14]  . '</td></tr>'

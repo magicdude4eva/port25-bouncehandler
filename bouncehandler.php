@@ -122,8 +122,15 @@ while(( $bounceRecord = fgetcsv(STDIN,4096)) !== FALSE ) {
   }
 
   // This is a feedback loop record
-  if ($STANDALONE_MODE == false && $bounceRecord[0]=="f" && filter_var($bounceRecord[PORT25_OFFSET_FEEDBACK_RECIPIENT], FILTER_VALIDATE_EMAIL)) {
-    $recipient = $bounceRecord[PORT25_OFFSET_FEEDBACK_RECIPIENT];
+  if ($STANDALONE_MODE == false && $bounceRecord[0]=="f") {
+    // For bounce records we sometimes get RFC emails (i.e. "<name@outlook.com>") and need to just strip out the email
+    preg_match('/[\\w\\.\\-+=*_]*@[\\w\\.\\-+=*_]*/', $bounceRecord[PORT25_OFFSET_FEEDBACK_RECIPIENT], $regs);
+    $recipient = $regs[0];
+
+    if (!filter_var($recipient, FILTER_VALIDATE_EMAIL)) {
+      continue;
+    }
+
     $FEEDBACK_LOOP_MODE = true;
   }
 
