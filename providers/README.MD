@@ -5,4 +5,11 @@ Still work-in-progress and I anticipate more changes in it as we receive FBL rep
 
 FBLs tested against:
 - Yahoo!-Mail-Feedback/2.0 (arf)
-- Outlook/Hotmail - not tested - if you happen to get a FBL record, please pass it on or let me know if RFC/ARF actually works.
+- Microsoft JMRP (arf)
+
+## Microsoft Junkmail Reporting Program
+You can register via https://postmaster.live.com/snds/JMRP.aspx. There is misleading information floating around that the ARF format is incorrect. I have tested this and Microsoft provides all the necessary fields for FBL processing.
+
+I did notice that JMRP does not provide the agent information and in certain cases submits the email address within `<`/`>`. The `feedback-loop-processor.php` takes care of this and santises missing/wrong information.
+
+
