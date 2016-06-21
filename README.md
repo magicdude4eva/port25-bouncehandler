@@ -276,3 +276,26 @@ List-Unsubscribe:
  When a user clicks on the "Unsubscribe link", the mail-client will send an email to the `mailto` address. Port25 (via the configuration of the MX record) will accept the email, extract the `from` and `to` details and then invokce the `unsubhandler.php` piping the content of the email received into the handler.
  
  The `unsubhandler.php` then extracts the subscriber-UID and list-UID from the `to` address and then calls the MailWizz API to unsubscribe the user. Once a unsubscribe was successful, an email is sent to you (you will need to adjust `unsubhandler.php` to change this).
+ 
+ If you do not use MailWizz and generate your own List-Unsubscribe headers, I found the sequence of `mailto` (first) and `http` (second) to be very important. Google outright refuses to process unsubscribe requests if `mailto` is not first.
+ 
+ ## IMPORTANT: DKIM signing of additional headers
+ If you are not using DKIM to sign your emails, you should revisit your email sender practises. DKIM is *absolutely* necessary for Google Postmaster Tools to function and both `Feedback-ID` and `List-Unsubscribe` need to be signed.
+ 
+ I have placed default options into a wild-card domain so that it applies to all recipients (also note the optimistic TLS for encrypted outbound mail):
+ 
+ ```
+ <domain *>
+ ...
+
+  dkim-sign                                        yes    # DKIM signing on messages
+  dkim-algorithm                            rsa-sha256    # recommended by RFC4871, default rsa-sha1
+  dkim-body-canon                               simple    # recommended by DKIMCore (default relaxed)
+  dkim-headers            Feedback-ID,List-Unsubscribe    # additionally sign the Feedback-ID header
+
+  use-starttls                                     yes    # Specifies whether PowerMTA should use the STARTTLS extension
+  require-starttls                                  no    # We use optimistic TLS - i.e. only use it if the recipient supports it
+
+...
+</domain>
+ ```
