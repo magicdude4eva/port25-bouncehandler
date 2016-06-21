@@ -69,7 +69,7 @@ $log->lwrite('Bounce-provider: Interspire, complete');
 // INTERSPIRE FUNCTIONS
 // Handle the unsubscription of a recipient
 function Interspire_unsubscribeRecipient($recipient) { 
-  global $log, $apiInterspireListIDs, $INTERSPIRE_HANDLER_ENABLED, $INTERSPIRE_LIST_CHECK_ENABLED, $INTERSPIRE_LIST_TTL, $INTERSPIRE_LAST_LIST_REFRESH;
+  global $log, $apiInterspireListIDs, $reportingInterface, $INTERSPIRE_HANDLER_ENABLED, $INTERSPIRE_LIST_CHECK_ENABLED, $INTERSPIRE_LIST_TTL, $INTERSPIRE_LAST_LIST_REFRESH;
 	
   // Let's check the last time we refreshed the list
   $timediff = microtime(true) - $INTERSPIRE_LAST_LIST_REFRESH;
@@ -114,15 +114,24 @@ function Interspire_unsubscribeRecipient($recipient) {
     $log->lwrite('   Interspire: Skipping recipient ' . $recipient . ' - no subscribed lists returned');
     return array(true, "Skipped - not subscribed");
   }
-
   $unsubMessage = "";
 	
   // Iterate through users lists and unsubscribe
+  $unsubCounter = 0;
+  
   foreach ($emailLists as $listid) {
     $unsubStatus = Interspire_unsubscribeSubscriber($recipient, $listid);
     $log->lwrite('   Interspire: Unsubscribe user ' . $recipient . ' from list=' . $listid . ', status=' . $unsubStatus);
-
+    
+    if ($unsubStatus == "OK") {
+      ++$unsubCounter;
+    }
     $unsubMessage .= "List-" . $listid . "=" . $unsubStatus . ",";
+  }
+  
+  // Log the unsubscribe count into RRD
+  if ($unsubCounter > 0) {
+    $reportingInterface->logReportRecord("bounce_interspire", $unsubCounter);
   }
 
   return array(true, $unsubMessage); 

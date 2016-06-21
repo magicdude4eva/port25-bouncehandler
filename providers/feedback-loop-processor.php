@@ -45,6 +45,14 @@ function feedbackLoopEvent($recipient, $feedbackLoopRecord) {
   global $log;
 
   $reportAgent = $feedbackLoopRecord[5];
+  $senderEmail = $feedbackLoopRecord[7];
+
+  // For bounce records we sometimes get RFC emails (i.e. "<name@outlook.com>") and need to just strip out the email
+  preg_match('/[\\w\\.\\-+=*_]*@[\\w\\.\\-+=*_]*/', $feedbackLoopRecord[12], $regs);
+
+  if (!is_null($regs) && !empty($regs) && filter_var($regs[0], FILTER_VALIDATE_EMAIL)) {
+    $senderEmail = $regs[0];
+  }
 
   // In case the report agent is emtpy and this is a Microsoft JMRP report, we construct our own agent
   if ((is_null($reportAgent) || empty($reportAgent)) && $feedbackLoopRecord[4] == 'jmrp') {
@@ -85,9 +93,12 @@ function feedbackLoopEvent($recipient, $feedbackLoopRecord) {
   $mail->IsHTML(true);
 
   $mail->Subject = "Port25: Email abuse report processed";
-  $mail->Body    = "This is the HTML message body <b>in bold!</b>";
 
-  $mail->Body = '<h2>Port25 - Feedback Loop</h2>'
+  $mail->Body = '<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML+RDFa 1.1//EN" "http://www.w3.org/MarkUp/DTD/xhtml-rdfa-2.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:v="http://rdf.data-vocabulary.org/#" lang="en" xml:lang="en" dir="ltr" xmlns:og="http://ogp.me/ns#" >
+<head><title>Port25 - Feedback Loop report</title></head>
+    <body><h2>Port25 - Feedback Loop</h2>'
     . '<p>Port25 processed the following feedback loop complaint and the user was unsubscribed:</p>'
     . '<table rules="all" style="border-color: #666;border: 1px;width: 50%;" cellpadding="10">'
     . '<tr style="background: #eee"><td style="width:20%"><strong>Reporter:</strong> </td><td style="width:70%"><strong>' . $recipient . '</strong>'
@@ -95,19 +106,20 @@ function feedbackLoopEvent($recipient, $feedbackLoopRecord) {
     . '<tr><td><strong>Received:</strong> </td><td>' . $feedbackLoopRecord[1]  . '</td></tr>'
     . '<tr><td><strong>Reported via:</strong> </td><td>' . $reportAgent . '</td></tr>'
     . '<tr><td><strong>Reported IP:</strong> </td><td>' . $feedbackLoopRecord[2]  . '</td></tr>'
-    . '<tr><td><strong>Sender:</strong> </td><td>' . $feedbackLoopRecord[7]  . '</td></tr>'
+  . '<tr><td><strong>Sender:</strong> </td><td>' . $senderEmail . '</td></tr>'
     . '<tr><td><strong>Feedback ID:</strong> </td><td>' . $feedbackLoopRecord[14]  . '</td></tr>'
     . '<tr><td><strong>Subject:</strong> </td><td>' . $feedbackLoopRecord[15]  . '</td></tr>'
     . '<tr><td><strong>Message Id:</strong> </td><td><pre>' . rtrim(ltrim($feedbackLoopRecord[18], '<'), '>')  . '</pre></td></tr>'
     . '<tr><td><strong>Unsubscribe status:</strong> </td><td><pre>' . $unsubstatus . '</pre></td></tr>'
     . '<tr><td><strong>List unsubscribe:</strong> </td><td>' . rtrim(ltrim($feedbackLoopRecord[19], '<'), '>')  . '</td></tr>'
-    . '</table>';
+  . '</table>
+<br/><br/>
+</body></html>
+  ';
 
   if (!$mail->Send()) {
     $log->lwrite('FBL record processed! Email notification failed: ' . $mail->ErrorInfo);
   } else {
     $log->lwrite('FBL record processed and email sent!');
   }
-
-
 }

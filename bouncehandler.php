@@ -87,6 +87,27 @@ define("PORT25_OFFSET_FEEDBACK_RECIPIENT",        8); // rcp
 // Adjust the setup.php accordingly
 require_once dirname(__FILE__) . '/setup.php';
 
+// ------------------------------------------------------------------------------------------------------
+// Main programme
+$log->lwrite('------------------------------------------------------------------');
+$log->lwrite('Port25 PowerMTA bounce-handler');
+$log->lwrite('(C) 2016 Gerd Naschenweng  http://github.com/magicdude4eva');
+$log->lwrite('------------------------------------------------------------------');
+$log->lwrite('Handling bounce categories=' . (is_null($bounceCategories) || empty($bounceCategories) ? 'all records' : implode(',', $bounceCategories)));
+
+// ------------------------------------------------------------------------------------------------------
+// Initialise bounce providers
+require_once dirname(__FILE__) . '/providers/bounce-provider-interspire.php';
+require_once dirname(__FILE__) . '/providers/bounce-provider-mailwizz.php';
+require_once dirname(__FILE__) . '/providers/feedback-loop-processor.php';
+
+// ------------------------------------------------------------------------------------------------------
+// Initialise reporting class
+if (defined('RRD_FILE') && RRD_FILE) {
+  $reportingInterface = new BounceReporting(RRD_FILE);
+}
+
+
 
 // ------------------------------------------------------------------------------------------------------
 $totalRecords = 0;
@@ -148,6 +169,9 @@ while(( $bounceRecord = fgetcsv(STDIN,4096)) !== FALSE ) {
 	
   // In Standalone mode, we unsubscribe bounces from all systems
   if ($STANDALONE_MODE == true) {
+    // Log the bounce record to RRD
+    $reportingInterface->logReportRecord("bounces", 1);
+
     MailWizz_unsubscribeRecipient($recipient);
     Interspire_unsubscribeRecipient($recipient);
     ++$totalRecordsProcessed;
@@ -156,7 +180,10 @@ while(( $bounceRecord = fgetcsv(STDIN,4096)) !== FALSE ) {
   
   // In Feedback mode, handle feedback record
   if ($FEEDBACK_LOOP_MODE == true) {
-    // feedbackLoopEvent($recipient,$bounceRecord); - your own FBL processor
+    // Log FBL record to RRD
+    $reportingInterface->logReportRecord("fbl_reports", 1);
+    
+    feedbackLoopEvent($recipient,$bounceRecord);
     ++$totalRecordsProcessed;
     continue;
   }
@@ -166,6 +193,8 @@ while(( $bounceRecord = fgetcsv(STDIN,4096)) !== FALSE ) {
 
   // If we have a transactional match, call the transactional webhook
   if (in_array($bounceRecord[PORT25_OFFSET_BOUNCE_SOURCE_EMAIL], $origTransactional)) {
+    // Log the bounce record to RRD
+    $reportingInterface->logReportRecord("bounces", 1);
     //Transactional_unsubscribeRecipient($recipient, $bounceRecord); - your own transactinal processor
     ++$totalRecordsProcessed;
     continue;
@@ -173,6 +202,9 @@ while(( $bounceRecord = fgetcsv(STDIN,4096)) !== FALSE ) {
 	
   // Handle MailWizz bounces
   if (in_array($bounceRecord[PORT25_OFFSET_BOUNCE_SOURCE_EMAIL], $origMailWizzZA)) {
+    // Log the bounce record to RRD
+    $reportingInterface->logReportRecord("bounces", 1);
+
     MailWizz_unsubscribeRecipient($recipient);
     ++$totalRecordsProcessed;
     continue;
@@ -180,6 +212,9 @@ while(( $bounceRecord = fgetcsv(STDIN,4096)) !== FALSE ) {
 	
   // Handle Interspire bounces
   if (in_array($bounceRecord[PORT25_OFFSET_BOUNCE_SOURCE_EMAIL], $origInterspire)) {
+    // Log the bounce record to RRD
+    $reportingInterface->logReportRecord("bounces", 1);
+
     Interspire_unsubscribeRecipient($recipient);
     ++$totalRecordsProcessed;
     continue;

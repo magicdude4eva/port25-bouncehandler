@@ -38,6 +38,9 @@ $LOG_FILE         = "/var/log/pmta/pmta-bounce-handler.log";
 // Leave empty to handle all bounce-categories
 $bounceCategories = array("bad-mailbox","bad-domain","routing-errors","inactive-mailbox","spam-related");
 
+// ------------------------------------------------------------------------------------------------------
+// RRD Graphs - requires installation of php-rrdtool - if not defined, it will not be enabled
+define("RRD_FILE",        "/var/log/pmta/pmta.rrd");
 
 // ------------------------------------------------------------------------------------------------------
 // INTERSPIRE BOUNCE CONFIGURATION - leave empty/undefined if not needed
@@ -92,24 +95,12 @@ $log = new Logging();
 $log->ldebug($LOG_CONSOLE_MODE);
 $log->lfile($LOG_FILE);
 
-$log->lwrite('------------------------------------------------------------------');
-$log->lwrite('Port25 PowerMTA bounce-handler');
-$log->lwrite('(C) 2016 Gerd Naschenweng  http://github.com/magicdude4eva');
-$log->lwrite('------------------------------------------------------------------');
-$log->lwrite('Handling bounce categories=' . (is_null($bounceCategories) || empty($bounceCategories) ? 'all records' : implode(',', $bounceCategories)));
-
-// ------------------------------------------------------------------------------------------------------
-// Initialise bounce providers
-require_once dirname(__FILE__) . '/providers/bounce-provider-interspire.php';
-require_once dirname(__FILE__) . '/providers/bounce-provider-mailwizz.php';
-//require_once dirname(__FILE__) . '/providers/bounce-provider-transactinal.php'; -- your own transactional provider
-//require_once dirname(__FILE__) . '/providers/feedback-loop-processor.php'; -- your own FBL processor
-
 // ========================================================================================================
 // LOGGING CLASS
 class Logging {
     // declare log file and file pointer as private properties
     private $log_file, $fp, $debug = 0;
+  
     // set log file (path and name)
     public function lfile($path) {
         $this->log_file = $path;
@@ -159,6 +150,69 @@ class Logging {
 }
 // LOGGING CLASS
 // ========================================================================================================
+
+// ========================================================================================================
+// Bounce Reporting class
+class BounceReporting {
+  // declare log file and file pointer as private properties
+  private $rrdFile = null, $rrdUpdater = null;
+  
+  function __construct($aRRDFile) {
+    global $log;
+    $log->lwrite('Initialising RRD reporting via ' . $aRRDFile);
+      
+    if (!extension_loaded('rrd') && !dl('rrd.so')) {
+      $log->lwrite('  RRD not installed, please install php-pecl-rrd or php-rrdtool');
+      return;
+    }
+    
+    if (!file_exists($aRRDFile)) {
+      try {
+        $log->lwrite('  Creating new RRD file...');
+        $creator = new RRDCreator($aRRDFile, "now", 300);
+        $creator->addDataSource("fbl_reports:ABSOLUTE:600:0:U");
+        $creator->addDataSource("bounces:ABSOLUTE:600:0:U");
+        $creator->addDataSource("bounce_mailwizz:ABSOLUTE:600:0:U");
+        $creator->addDataSource("bounce_interspire:ABSOLUTE:600:0:U");
+        $creator->addDataSource("bounce_bidorbuy:ABSOLUTE:600:0:U");
+        $creator->addArchive("AVERAGE:0.5:1:288");
+        $creator->addArchive("AVERAGE:0.5:12:168");
+        $creator->addArchive("AVERAGE:0.5:228:365");
+        $creator->save();  
+        $this->rrdFile = $aRRDFile;
+        $log->lwrite('  RRD file initialised!');
+      } catch (Exception $ex) {
+        $log->lwrite('  Failed creating RRD with error=' . $ex->getMessage() . "! Please check path and permissions!");
+      }
+    } else {
+        $this->rrdFile = $aRRDFile;
+    }
+  }
+  
+  function logReportRecord($recordingFields, $recordingCounter = 1) {
+    global $log;
+  
+    if (is_null($recordingFields) || empty($recordingFields) || is_null($this->rrdFile) || empty($this->rrdFile) || !file_exists($this->rrdFile)) {
+      return;
+    }
+    
+    try {
+      if (is_null($this->rrdUpdater)) {
+        $this->rrdUpdater = new RRDUpdater($this->rrdFile);
+      }
+      
+      $tempRecordFields = explode(',', $recordingFields);
+      foreach ($tempRecordFields as $rrdRecord) {
+        $this->rrdUpdater->update(array($rrdRecord => (null === $recordingCounter ? 1 : $recordingCounter)));
+      }
+    } catch (Exception $ex) {
+        $log->lwrite('  Failed writing RRD-record "' . $recordingFields . '", error=' . $ex->getMessage());
+    }
+  }
+}
+
+// ========================================================================================================
+// BounceUtility
 class BounceUtility {
 // Test if URL is available
 public static function testEndpointURL($endpointURL) {
