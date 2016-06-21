@@ -4,6 +4,14 @@ ___
 :beer: **Please support me**: Although all my software is free, it is always appreciated if you can support my efforts on Github with a [contribution via Paypal](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=ZRP5WBD8CT8EW) - this allows me to write cool projects like this in my personal time and hopefully help you or your business. 
 ___
 
+## TL;DR - Features
+* Requires PHP5.6 and PHPMailer (optional is RRD for graphing)
+* Integrates with MailWizz, Interspire and provides functionality to plug in your own handler
+* With Port25 PowerMTA you get the following real-time functionality
+ * Uses PowerMTA accounting pipes to unsubscribe when a bounce occurs
+ * Uses PowerMTA feedback loop processing and unsubscribes recipients as FBL complaints arrive
+ * Uses PowerMTA domain pipe handling to handle List-Unsubscribes
+
 ## Overview
 Transactional- and promotional mail to our customers is an important mechanism to stay in touch and hopefully improve revenue due to the value and information we provide in our communication with customers.
 
@@ -209,7 +217,7 @@ For the setup to work, the following is required:
 ```
 - Configure for which domains / addresses you allow inbound mail:
 ```
-relay-address abuse@fbl.example.com
+relay-domain fbl.bidorbuy.co.za
 ```
 - Configure your accounting file to accept FBL records (note that we use `--logfile` to write to a different log-file:
 ```
@@ -236,3 +244,35 @@ In addition to the standard FBL fields, we write out the following fields:
 * __header_X-Mailer-RecptId__: The Subscriber-UID provided by Interspire
  
 Some FBL providers (such as OpenSRS/ReturnPath) will anonymise the recipient-email address and in those cases we need to use the Subscriber-ID/List-ID to unsubscribe the user.
+
+# Port25 List-Unsubscribe handling
+The unsubscribe handling currently only supports MailWizz, but can be extended to anything else. In order for MailWizz to work, you will need install and configure the `mailwizz-unsubscribe-extension`.
+
+Additionally, you need to make the following DNS and Port25 changes:
+
+- Create a FBL domain `fbl-unsub.example.com`
+
+- Create a MX record for `fbl-unsub.example.com` which points to your Port25 server - i.e. `fbl-unsub.example.com MX 1 mailserver.example.com`
+
+- Configure the `fbl-unsub.example.com` domain in Port25 to process unsubscribes:
+```
+relay-domain fbl-unsub.example.com
+
+<domain fbl-unsub.example.com>
+  type pipe
+  command "/usr/bin/php /opt/pmta/bouncehandler/unsubhandler.php --logfile=/var/log/pmta/unsubhandler.log --from=""$from"" --to=""$to"""
+</domain>
+```
+
+## How it works
+The MailWizz extension modifies the `List-Unsubscribe` to includes mailto and HTTP tags to allow providers such as Google, Microsoft, Yahoo to offer their users an automatic unsubscribe without leaving the email client:
+
+```
+List-Unsubscribe:
+ <mailto:[SUBSCRIBER_UID].[LIST_UID].[CAMPAIGN_UID]@fbl-unsub.example.com?subject=unsubscribe>,
+ <http://YOURMAILWIZZDOMAIN.COM/lists/[LIST_UID]/unsubscribe/[CAMPAIGN_UID]/[SUBSCRIBER_UID]/unsubscribe-direct?source=email-client-unsubscribe-button>
+ ```
+ 
+ When a user clicks on the "Unsubscribe link", the mail-client will send an email to the `mailto` address. Port25 (via the configuration of the MX record) will accept the email, extract the `from` and `to` details and then invokce the `unsubhandler.php` piping the content of the email received into the handler.
+ 
+ The `unsubhandler.php` then extracts the subscriber-UID and list-UID from the `to` address and then calls the MailWizz API to unsubscribe the user. Once a unsubscribe was successful, an email is sent to you (you will need to adjust `unsubhandler.php` to change this).
