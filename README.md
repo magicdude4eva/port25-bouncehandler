@@ -196,6 +196,8 @@ Ensure that the bouncehandler logs the startup-messages in it's log-file. If thi
 # Port25 feedback loop processing
 Port25 is capable of processing feedback loop (FBL) reports. In our case we have automated the FBL processing, where Port25 receives the FBL report, then pipes it into our bouncehandler.php which then calls a feedback-loop processor. We automatically remove any reported email from all systems and notify our Postmaster team via email.
 
+![Port25 FBL notification](https://raw.githubusercontent.com/magicdude4eva/port25-bouncehandler/master/port25-fbl-notice.png)
+
 For the setup to work, the following is required:
 
 - Create a FBL domain `fbl.example.com`
