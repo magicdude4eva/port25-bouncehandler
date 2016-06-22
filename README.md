@@ -248,6 +248,8 @@ Some FBL providers (such as OpenSRS/ReturnPath) will anonymise the recipient-ema
 # Port25 List-Unsubscribe handling
 The unsubscribe handling currently only supports MailWizz, but can be extended to anything else. In order for MailWizz to work, you will need install and configure the `mailwizz-unsubscribe-extension`.
 
+![Port25 List-Unsubscribe notification](https://raw.githubusercontent.com/magicdude4eva/port25-bouncehandler/master/port25-list-unsubscribe-notice.png)
+
 Additionally, you need to make the following DNS and Port25 changes:
 
 - Create a FBL domain `fbl-unsub.example.com`
