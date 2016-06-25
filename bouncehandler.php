@@ -81,6 +81,8 @@ define("PORT25_OFFSET_BOUNCE_RECIPIENT",          5); // rcpt
 // Feedback Loop Record offsets: Only adjust the offsets below if you create a different accounting file
 define("PORT25_OFFSET_FEEDBACK_SOURCE_EMAIL",     7); // orig
 define("PORT25_OFFSET_FEEDBACK_RECIPIENT",        8); // rcp
+define("PORT25_OFFSET_FEEDBACK_REPORTDOMAIN",    11); // reporter domain
+define("PORT25_OFFSET_FEEDBACK_LISTUNSUBSCRIBE", 19); // List-Unsubscribe
 
 
 // Initialise Setup and configuration
@@ -145,8 +147,26 @@ while(( $bounceRecord = fgetcsv(STDIN,4096)) !== FALSE ) {
   // This is a feedback loop record
   if ($STANDALONE_MODE == false && $bounceRecord[0]=="f") {
     // For bounce records we sometimes get RFC emails (i.e. "<name@outlook.com>") and need to just strip out the email
+    if (!is_null($bounceRecord[PORT25_OFFSET_FEEDBACK_RECIPIENT]) && !empty($bounceRecord[PORT25_OFFSET_FEEDBACK_RECIPIENT])) {
     preg_match('/[\\w\\.\\-+=*_]*@[\\w\\.\\-+=*_]*/', $bounceRecord[PORT25_OFFSET_FEEDBACK_RECIPIENT], $regs);
     $recipient = $regs[0];
+    } else if (!is_null($bounceRecord[PORT25_OFFSET_FEEDBACK_LISTUNSUBSCRIBE]) && !empty($bounceRecord[PORT25_OFFSET_FEEDBACK_LISTUNSUBSCRIBE])) {
+       // mail.ru does not send the from address, we just set a dummy, as we are able to pick the recipient from the List-Unsubscribe
+      if (preg_match("/^mail.ru/", $bounceRecord[PORT25_OFFSET_FEEDBACK_REPORTDOMAIN], $matches)) {
+      
+         // We get the to-address as:
+         // [SUBSCRIBERID].[LIST_UID].[CAMPAIGN_UID]@fbl-unsub.bidorbuy.co.za
+         preg_match('/^<mailto:(.*)\.(.*)\.(.*)@fbl-unsub\.bidorbuy\.co\.za/', $bounceRecord[PORT25_OFFSET_FEEDBACK_LISTUNSUBSCRIBE], $regs);
+  
+         if (!is_null($regs) && !empty($regs) && sizeof($regs) == 4) {
+           $getSubscriber = MailWizz_getSubscriber($regs[2], $regs[1]);
+    
+           if ($getSubscriber[0] == true) {
+             $recipient = $getSubscriber[1];
+           } 
+         } 
+      }
+    }
 
     if (!filter_var($recipient, FILTER_VALIDATE_EMAIL)) {
       continue;

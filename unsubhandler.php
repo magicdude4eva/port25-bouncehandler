@@ -126,6 +126,10 @@ while($data = fgets(STDIN)) {
       $UNSUBSCRIBE_DATA .= $matches[0] . "\n";
       continue;
     }
+    if (preg_match("/^X-OriginatorOrg: (.*)/", $data, $matches)) {
+      $UNSUBSCRIBE_DATA .= $matches[0] . "\n";
+      continue;
+    }
   } else {
     // not a header, but message
     $UNSUBSCRIBE_DATA .= $data . "\n";
