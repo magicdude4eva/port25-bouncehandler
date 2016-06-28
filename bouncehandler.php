@@ -152,7 +152,7 @@ while(( $bounceRecord = fgetcsv(STDIN,4096)) !== FALSE ) {
     $recipient = $regs[0];
     } else if (!is_null($bounceRecord[PORT25_OFFSET_FEEDBACK_LISTUNSUBSCRIBE]) && !empty($bounceRecord[PORT25_OFFSET_FEEDBACK_LISTUNSUBSCRIBE])) {
        // mail.ru does not send the from address, we just set a dummy, as we are able to pick the recipient from the List-Unsubscribe
-      if (preg_match("/^mail.ru/", $bounceRecord[PORT25_OFFSET_FEEDBACK_REPORTDOMAIN], $matches)) {
+      if (preg_match("/^(mail|bk).ru/", $bounceRecord[PORT25_OFFSET_FEEDBACK_REPORTDOMAIN], $matches)) {
       
          // We get the to-address as:
          // [SUBSCRIBERID].[LIST_UID].[CAMPAIGN_UID]@fbl-unsub.bidorbuy.co.za
