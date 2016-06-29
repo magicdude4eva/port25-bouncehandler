@@ -185,7 +185,7 @@ Once you are comfortable with this you can then switch into automatic processing
 ## Automatic processing
 Switching to automatic processing is quite simple, you adjust your current record to the following:
 ```
-<acct-file | /usr/bin/php /opt/pmta/bouncehandler/bouncehandler.php>
+<acct-file |/usr/bin/php /opt/pmta/bouncehandler/bouncehandler.php>
     records b
     record-fields b timeQueued,bounceCat,vmta,orig,rcpt,srcMta,dlvSourceIp,jobId,dsnStatus,dsnMta,dsnDiag
 </acct-file>
