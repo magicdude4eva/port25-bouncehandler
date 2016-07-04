@@ -112,6 +112,12 @@ while($data = fgets(STDIN)) {
     }
     if (preg_match("/^From: (.*)/", $data, $matches)) {
       $UNSUBSCRIBE_DATA .= $matches[0] . "\n";
+
+      // In some cases we get Postmaster reporting the issue, we will then use the From-address from the mail as the reporter
+      if (preg_match("/^(postmaster@outlook.com)/", $UNSUBSCRIBE_HANDLER_FROM, $match_from)) {
+        preg_match('/[\\w\\.\\-+=*_]*@[\\w\\.\\-+=*_]*/', $matches[1], $regs);
+        $UNSUBSCRIBE_HANDLER_FROM = $regs[0];
+      }
       continue;
     }
     if (preg_match("/^Date: (.*)/", $data, $matches)) {
