@@ -19,4 +19,6 @@ I have only received one OpenSRS FBL so far. OpenSRS/Returnpath anonymises the r
 ### Yahoo!-Mail-Feedback
 This works like a dream - no issues and all arf fields are filled.
 
+# PHP Dependencies
+The only requirement should be `php-PHPMailer` 
 
