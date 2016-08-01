@@ -304,6 +304,26 @@ List-Unsubscribe:
 </domain>
  ```
 
+## RRD configuration
+In a Linux environment, RRD is easy to configure and we use it to log unsubscribes and stats - this is pretty much experimental at the moment.
+
+If you do not need it, just remove the following line from `setup.php`:
+```
+// RRD Graphs - requires installation of php-rrdtool - if not defined, it will not be enabled
+define("RRD_FILE",        "/var/log/pmta/pmta.rrd");
+```
+
+The installation of RRD varies depending on your distribution. In our case of CentOS 7, it was as simple as:
+```
+yum install rrdtool-devel php56w-devel php56w-pear
+```
+
+Once done, you have to make the following change in your `/etc/php.ini`
+```
+; Used for Port25 RRD reporting
+extension=rrd.so
+```
+
 ## Our mail- / campaign-environment
 I have been asked a number of times what infrastructure we are running, and while I can not go into all the specifics, any decent Linux admin will be able to replicate it:
 * Everything is FOSS with the exception of PowertMTA
