@@ -193,7 +193,9 @@ while(( $bounceRecord = fgetcsv(STDIN,4096)) !== FALSE ) {
   // In Standalone mode, we unsubscribe bounces from all systems
   if ($STANDALONE_MODE == true) {
     // Log the bounce record to RRD
-    $reportingInterface->logReportRecord("bounces", 1);
+    if (defined('RRD_FILE') && RRD_FILE) {
+      $reportingInterface->logReportRecord("bounces", 1);
+    }
 
     MailWizz_unsubscribeRecipient($recipient);
     Interspire_unsubscribeRecipient($recipient);
@@ -204,7 +206,9 @@ while(( $bounceRecord = fgetcsv(STDIN,4096)) !== FALSE ) {
   // In Feedback mode, handle feedback record
   if ($FEEDBACK_LOOP_MODE == true) {
     // Log FBL record to RRD
-    $reportingInterface->logReportRecord("fbl_reports", 1);
+    if (defined('RRD_FILE') && RRD_FILE) {
+      $reportingInterface->logReportRecord("fbl_reports", 1);
+    }
     
     feedbackLoopEvent($recipient,$bounceRecord);
     ++$totalRecordsProcessed;
@@ -217,7 +221,9 @@ while(( $bounceRecord = fgetcsv(STDIN,4096)) !== FALSE ) {
   // If we have a transactional match, call the transactional webhook
   if (in_array($bounceRecord[PORT25_OFFSET_BOUNCE_SOURCE_EMAIL], $origTransactional)) {
     // Log the bounce record to RRD
-    $reportingInterface->logReportRecord("bounces", 1);
+    if (defined('RRD_FILE') && RRD_FILE) {
+      $reportingInterface->logReportRecord("bounces", 1);
+    }
     //Transactional_unsubscribeRecipient($recipient, $bounceRecord); - your own transactinal processor
     ++$totalRecordsProcessed;
     continue;
@@ -226,7 +232,9 @@ while(( $bounceRecord = fgetcsv(STDIN,4096)) !== FALSE ) {
   // Handle MailWizz bounces
   if (in_array($bounceRecord[PORT25_OFFSET_BOUNCE_SOURCE_EMAIL], $origMailWizzZA)) {
     // Log the bounce record to RRD
-    $reportingInterface->logReportRecord("bounces", 1);
+    if (defined('RRD_FILE') && RRD_FILE) {
+      $reportingInterface->logReportRecord("bounces", 1);
+    }
 
     MailWizz_unsubscribeRecipient($recipient);
     ++$totalRecordsProcessed;
@@ -236,7 +244,9 @@ while(( $bounceRecord = fgetcsv(STDIN,4096)) !== FALSE ) {
   // Handle Interspire bounces
   if (in_array($bounceRecord[PORT25_OFFSET_BOUNCE_SOURCE_EMAIL], $origInterspire)) {
     // Log the bounce record to RRD
-    $reportingInterface->logReportRecord("bounces", 1);
+    if (defined('RRD_FILE') && RRD_FILE) {
+      $reportingInterface->logReportRecord("bounces", 1);
+    }
 
     Interspire_unsubscribeRecipient($recipient);
     ++$totalRecordsProcessed;
