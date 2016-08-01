@@ -110,8 +110,6 @@ if (defined('RRD_FILE') && RRD_FILE) {
   $reportingInterface = new BounceReporting(RRD_FILE);
 }
 
-
-
 // ------------------------------------------------------------------------------------------------------
 $totalRecords = 0;
 $totalRecordsSkipped = 0;
