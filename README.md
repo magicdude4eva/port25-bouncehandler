@@ -318,6 +318,8 @@ The installation of RRD varies depending on your distribution. In our case of Ce
 yum install rrdtool-devel php56w-devel php56w-pear
 ```
 
+In some environments you will need to either additionally install `php-pecl-rrd` or `php-rrdtool`
+
 Once done, you have to make the following change in your `/etc/php.ini`
 ```
 ; Used for Port25 RRD reporting
