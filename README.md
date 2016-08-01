@@ -303,3 +303,14 @@ List-Unsubscribe:
 ...
 </domain>
  ```
+
+## Our mail- / campaign-environment
+I have been asked a number of times what infrastructure we are running, and while I can not go into all the specifics, any decent Linux admin will be able to replicate it:
+* Everything is FOSS with the exception of PowertMTA
+* We run CentOS 7 in a XEN environment (our own "cloud solution")
+* We have a dedciated AfriNIC IP range and dedicate IP blocks for system-, transactional- and promotional mails
+* We send CAN-SPAM compliant and use TLS for mail
+* All in-house servers use a local Postfix installation which relays to Port25. This is great, as Postfix will queue mail in case of maintenance on Port25
+* Port25 runs on a dedicated 4-core/12GB virtual server
+* We run the port25-bouncehandler in production with a few small customisations (mostly real-time reporting and daily/weekly MTA reports (`pmtastats` is just an awesome tool for this).
+* We also use some custom reporting scripts with the RRD data we generate
