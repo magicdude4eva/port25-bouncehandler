@@ -101,7 +101,7 @@ function MailWizz_unsubscribeRecipient($recipient) {
     }
     
     // Log the unsubscribe count into RRD
-    if ($unsubCounter > 0) {
+    if ((defined('RRD_FILE') && RRD_FILE) && $unsubCounter > 0) {
       $reportingInterface->logReportRecord("bounce_mailwizz", $unsubCounter);
     }
   } else {
