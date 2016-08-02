@@ -304,6 +304,21 @@ List-Unsubscribe:
 </domain>
  ```
 
+## Installation troubleshooting
+The configuration described above is running on a vanilla Centos7 installation with the [Webtatic PHP repository](https://webtatic.com/projects/yum-repository/) and our current version is PHP 5.6.24.
+
+From user feedback so far I noticed the following issues:
+
+### Wrong permissions / ownership of /opt/pmta/bouncehandler
+The bouncehandler receives piped data via Port25 and as such needs to run as the same user as Port25. Typically PowerMTA runs as user `pmta`, so make sure to set the following permissions:
+```
+chown -R pmta:pmta /opt/pmta/bouncehandler
+```
+
+### Wrong path to PHP
+On CentOS7, PHP resides in `/usr/bin/php` and the above configuration is based on that. I have seen some customer configurations where PHP resides in `/usr/local/bin/php` and you would have to adjust the Port25 configuration to reflect that.
+
+
 ## RRD configuration
 In a Linux environment, RRD is easy to configure and we use it to log unsubscribes and stats - this is pretty much experimental at the moment.
 
