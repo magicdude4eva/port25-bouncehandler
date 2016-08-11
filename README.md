@@ -221,8 +221,14 @@ For the setup to work, the following is required:
 ```
 relay-domain fbl.bidorbuy.co.za
 ```
-- Configure your accounting file to accept FBL records (note that we use `--logfile` to write to a different log-file:
+- Configure Port25 to write FBL requests into a fbl-CCYY-MM-DD-####.csv as well as a pipe-handler which accepts FBL records (note that we use `--logfile` to write to a different log-file:
 ```
+<acct-file /var/log/pmta/fbl.csv>
+    records feedback-loop
+    map-header-to-field f header_X-HmXmrOriginalRecipient rcpt  # hotmail recipient
+    record-fields f *, header_subject, header_BatchId, header_Message-Id, header_List-Unsubscribe, header_List-Id, header_X-Mw-Subscriber-Uid, header_X-Mailer-LID, header_X-Mailer-RecptId
+</acct-file>
+
 <acct-file |/usr/bin/php /opt/pmta/bouncehandler/bouncehandler.php --logfile=/var/log/pmta/fbl-processor.log>
     records feedback-loop
     map-header-to-field f header_X-HmXmrOriginalRecipient rcpt  # hotmail recipient
