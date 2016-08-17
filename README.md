@@ -226,14 +226,12 @@ relay-domain fbl.bidorbuy.co.za
 <acct-file /var/log/pmta/fbl.csv>
     records feedback-loop
     map-header-to-field f header_X-HmXmrOriginalRecipient rcpt  # hotmail recipient
-    map-header-to-field f header_X-Delivered-To rcpt            # Zoho recipient
     record-fields f *, header_subject, header_BatchId, header_Message-Id, header_List-Unsubscribe, header_List-Id, header_X-Mw-Subscriber-Uid, header_X-Mailer-LID, header_X-Mailer-RecptId
 </acct-file>
 
 <acct-file |/usr/bin/php /opt/pmta/bouncehandler/bouncehandler.php --logfile=/var/log/pmta/fbl-processor.log>
     records feedback-loop
     map-header-to-field f header_X-HmXmrOriginalRecipient rcpt  # hotmail recipient
-    map-header-to-field f header_X-Delivered-To rcpt            # Zoho recipient
     record-fields f *, header_subject, header_BatchId, header_Message-Id, header_List-Unsubscribe, header_List-Id, header_X-Mw-Subscriber-Uid, header_X-Mailer-LID, header_X-Mailer-RecptId
 </acct-file>
 ```
