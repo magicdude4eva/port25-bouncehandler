@@ -359,3 +359,6 @@ I have been asked a number of times what infrastructure we are running, and whil
 * Port25 runs on a dedicated 4-core/12GB virtual server
 * We run the port25-bouncehandler in production with a few small customisations (mostly real-time reporting and daily/weekly MTA reports (`pmtastats` is just an awesome tool for this).
 * We also use some custom reporting scripts with the RRD data we generate
+
+## Collecting, parsing and analysing Port25 accounting files
+We use Logstash and Graylog for log collection and monitoring. Logstash has a versatile CSV filter which allows the parsing and processing of PowerMTA accounting files into Graylog or Kibana - the GIST can be viewed via the GIST:[Port25 Logstash & Graylog integration](https://gist.github.com/magicdude4eva/5001d3b52743062f6fb28e3a92b7fce4)
