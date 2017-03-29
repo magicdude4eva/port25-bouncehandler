@@ -169,7 +169,7 @@ if (!is_null($UNSUBSCRIBE_HANDLER_TO) && !empty($UNSUBSCRIBE_HANDLER_TO) && filt
     $unsubscribe = MailWizz_unsubscribeSubscriberUIDFromListUID($regs[1], $regs[2]);
     
     if ($unsubscribe[0] == true) {
-      $reportingInterface->logReportRecord("bounce_mailwizz", 1);
+      $reportingInterface->logReportRecord("bounces", 1);
       sendUnsubscribeEmailNotification($UNSUBSCRIBE_HANDLER_FROM, $regs[1], $regs[2], $regs[3], htmlspecialchars($UNSUBSCRIBE_DATA, ENT_QUOTES));
     } 
   } else {
@@ -184,13 +184,30 @@ $log->lwrite('* Done processing');
 // close log file
 $log->lclose();
 
+// close stats file
+$statsfile->lclose();
+
+
 die();
 
 
 // ========================================================================================================
 // Send Unsubscribe notification
 function sendUnsubscribeEmailNotification($recipient, $subscriberUID, $listUID, $campaignUID, $unsubscribeEmailData) { 
-  global $log;
+  global $log, $statsfile, $LOG_STATS_FILE_ONLY;
+
+  $campaignData = MailWizz_getCampaignListId($campaignUID);
+
+  // Write stats file record
+  if ($LOG_STATS_FILE_ONLY == true) {
+    // DATE, Unsub, Recipient, FBL-Source, Campaign-UID, Subject, CampaignName
+    if ($campaignData[0] == true) {
+      $statsfile->lwrite(",\"Unsub\",\"" . $recipient . "\",\"direct\",\"" . $campaignUID . "\",\"" . $campaignData[5] . "\",\"" . $campaignData[4] . "\"");
+    } else {
+      $statsfile->lwrite(",\"Unsub\",\"" . $recipient . "\",\"direct\",\"" . $campaignUID . "\",,");
+    }
+    return;
+  }
   
   // Send the email using PHPMailer
   $mail = new PHPMailer();
@@ -204,8 +221,6 @@ function sendUnsubscribeEmailNotification($recipient, $subscriberUID, $listUID, 
   $mail->AddReplyTo("postmaster@YOURDOMAIN.COM", "bidorbuy Postmaster");
   $mail->Subject = "Port25: Unsubscribe request received";
   
-  $campaignData = MailWizz_getCampaignListId($campaignUID);
-
   $mail->Body = '<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML+RDFa 1.1//EN" "http://www.w3.org/MarkUp/DTD/xhtml-rdfa-2.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:v="http://rdf.data-vocabulary.org/#" lang="en" xml:lang="en" dir="ltr" xmlns:og="http://ogp.me/ns#" >

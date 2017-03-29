@@ -42,8 +42,8 @@ $log->lwrite('Feedback-provider: complete');
 // ========================================================================================================
 // Handle Feedback Loop Event
 function feedbackLoopEvent($recipient, $feedbackLoopRecord) { 
-  global $log;
-
+  global $log, $statsfile, $LOG_STATS_FILE_ONLY;
+  
   $reportAgent = $feedbackLoopRecord[5];
   $senderEmail = $feedbackLoopRecord[7];
 
@@ -58,14 +58,14 @@ function feedbackLoopEvent($recipient, $feedbackLoopRecord) {
   if ((is_null($reportAgent) || empty($reportAgent)) && $feedbackLoopRecord[4] == 'jmrp') {
     $reportAgent = "Microsoft JMRP/" . $feedbackLoopRecord[11];
   }
-
+  
   $log->lwrite('FBL received from: ' . $reportAgent . ' for=' .  $feedbackLoopRecord[8] . ' via ' . $feedbackLoopRecord[8]);
-
+  
   // We check if we have the MailWizz header "List-Id" and "X-Mw-Subscriber-Uid" in the FBL, then we change the recipient
   if (array_key_exists(20, $feedbackLoopRecord) && !is_null($feedbackLoopRecord[20]) && !empty($feedbackLoopRecord[20]) &&
       array_key_exists(21, $feedbackLoopRecord) && !is_null($feedbackLoopRecord[21]) && !empty($feedbackLoopRecord[21])) {
     $subscriberEmail = MailWizz_getSubscriber($feedbackLoopRecord[20], $feedbackLoopRecord[21]);
-
+    
     if ($subscriberEmail[0] == true) {
       $log->lwrite('*** FBL record provided list-id=' . $feedbackLoopRecord[20] . ' and subscriberid=' . $feedbackLoopRecord[21] . ", using=" . $subscriberEmail[1]);
       $recipient = $subscriberEmail[1];
@@ -76,12 +76,21 @@ function feedbackLoopEvent($recipient, $feedbackLoopRecord) {
 
   $unsub_interspire = Interspire_unsubscribeRecipient($recipient);
 
+  // Write stats file record
+  if ($LOG_STATS_FILE_ONLY == true) {
+    // DATE, Abuse, Recipient, FBL-Source, Campaign-UID, Subject, CampaignName
+    $statsfile->lwrite(",\"Abuse\",\"" . $recipient . "\",\"" . $reportAgent . "\",,\"" . $feedbackLoopRecord[15] . "\",");
+
+    $log->lwrite('Written stats-file record="Abuse","' . $recipient . '","' . $reportAgent . '",,"' . $feedbackLoopRecord[15] . '"');
+
+    return;
+  }
+
   $unsubstatus = "<span title='" . $unsub_mailwizz[1] . "'>MailWizz=" . ($unsub_mailwizz[0] == true ? "OK":"Check") . "</span>"
     . ", <span title='" . $unsub_interspire[1] . "'>Interspire=" . ($unsub_interspire[0] == true ? "OK":"Check") . "</span>";
 
   // Send the email using PHPMailer
   $mail = new PHPMailer();
-
   $mail->IsSMTP();                                      // set mailer to use SMTP
   $mail->Host = "localhost";  // specify main and backup server
   $mail->SMTPAuth = false;     // turn off SMTP authentication
@@ -116,7 +125,7 @@ function feedbackLoopEvent($recipient, $feedbackLoopRecord) {
 <br/><br/>
 </body></html>
   ';
-
+  
   if (!$mail->Send()) {
     $log->lwrite('FBL record processed! Email notification failed: ' . $mail->ErrorInfo);
   } else {

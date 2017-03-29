@@ -59,6 +59,7 @@ if (defined('INTERSPIRE_API_KEY') && INTERSPIRE_API_KEY &&
   }
 } else {
   $log->lwrite('   Skipped - not configured!');
+  return;
 }
 
 $log->lwrite('Bounce-provider: Interspire, complete');
@@ -70,7 +71,11 @@ $log->lwrite('Bounce-provider: Interspire, complete');
 // Handle the unsubscription of a recipient
 function Interspire_unsubscribeRecipient($recipient) { 
   global $log, $apiInterspireListIDs, $reportingInterface, $INTERSPIRE_HANDLER_ENABLED, $INTERSPIRE_LIST_CHECK_ENABLED, $INTERSPIRE_LIST_TTL, $INTERSPIRE_LAST_LIST_REFRESH;
-	
+
+  if ($INTERSPIRE_HANDLER_ENABLED == false) {
+    return array(false, "Interspire not enabled! Check logs!");
+  }
+
   // Let's check the last time we refreshed the list
   $timediff = microtime(true) - $INTERSPIRE_LAST_LIST_REFRESH;
   
@@ -93,10 +98,6 @@ function Interspire_unsubscribeRecipient($recipient) {
     }
   }
 	
-  if ($INTERSPIRE_HANDLER_ENABLED == false) {
-    return array(false, "Interspire not enabled! Check logs!");
-  }
-
   // Get the interspire lists
   if (is_null($apiInterspireListIDs) || empty($apiInterspireListIDs)) {
     $apiInterspireListIDs = implode(',', Interspire_getLists());

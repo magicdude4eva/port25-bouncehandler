@@ -34,6 +34,11 @@
 $LOG_CONSOLE_MODE = 0;
 $LOG_FILE         = "/var/log/pmta/pmta-bounce-handler.log";
 
+// Statistics handling
+$LOG_STATS_FILE_ONLY = true; // set to true if you want to skip email notifications
+$LOG_STATS_FILE      = "/var/log/pmta/pmta-bounce-stats.log";
+
+
 // Handle the following bounce-categories only
 // Leave empty to handle all bounce-categories
 $bounceCategories = array("bad-mailbox","bad-domain","routing-errors","inactive-mailbox","spam-related");
@@ -90,10 +95,17 @@ if (!empty($options)) {
         break;
     }
   }
-}// Logging class initialization
+}
+
+// Logging class initialization
 $log = new Logging();
 $log->ldebug($LOG_CONSOLE_MODE);
 $log->lfile($LOG_FILE);
+
+// Stats file initialisation
+$statsfile = new Logging();
+$statsfile->lfile($LOG_STATS_FILE);
+
 
 // ========================================================================================================
 // LOGGING CLASS
@@ -117,7 +129,7 @@ class Logging {
         }
         // define current time and suppress E_WARNING if using the system TZ settings
         // (don't forget to set the INI setting date.timezone)
-        $time = @date('[d/M/Y:H:i:s]');
+        $time = @date('[d/M/Y H:i:s]');
         // write current time, script name and message to the log file
         if ($this->debug == 1) {
         	echo "$time $message" . PHP_EOL;
@@ -127,7 +139,7 @@ class Logging {
     }
     // close log file (it's always a good idea to close a file when you're done with it)
     public function lclose() {
-        if ($this->debug == 0) {
+        if ($this->debug == 0 && is_resource($this->fp)) {
 	        fclose($this->fp);
 	    }
     }
@@ -138,14 +150,14 @@ class Logging {
         $lfile = $this->log_file ? $this->log_file : $log_file_default;
         // open log file for writing only and place file pointer at the end of the file
         // (if the file does not exist, try to create it)
-	// First try to write to configured log-file
+        // First try to write to configured log-file
         if ($this->debug == 0) {
-	    $this->fp = fopen($lfile, 'a') or $lfile = 'pmta-bounce-handler.log';
-        }
+          $this->fp = fopen($lfile, 'a') or $lfile = 'pmta-bounce-handler.log';
+      }
         
         if ($this->debug == 0 && is_null($this->fp)) {
-	    $this->fp = fopen($lfile, 'a') or exit("Can't open $lfile!");
-	}
+          $this->fp = fopen($lfile, 'a') or exit("Can't open $lfile!");
+      }
     }
 }
 // LOGGING CLASS
@@ -216,23 +228,23 @@ class BounceReporting {
 class BounceUtility {
 // Test if URL is available
 public static function testEndpointURL($endpointURL) {
-	global $log;
-	$ch = curl_init($endpointURL);
-	curl_setopt($ch,  CURLOPT_RETURNTRANSFER, TRUE);
-	curl_setopt($ch, CURLOPT_TIMEOUT, 5);
-	$result = curl_exec($ch);
-
-	if ($result === false || is_null($result) || empty($result)) {
-		$log->lwrite('   Failed connecting to ' . $endpointURL . ', check conncitivity!');
-    	return false;
-	}
-	$httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-
-	if ($httpCode != 200 && $httpCode != 301 && $httpCode != 302) {
-		$log->lwrite('   Failed connecting to ' . $endpointURL . ', error=' . $httpCode);
-		return false;
-	}
-
-	return true;
+  global $log;
+  $ch = curl_init($endpointURL);
+  curl_setopt($ch,  CURLOPT_RETURNTRANSFER, TRUE);
+  curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+  $result = curl_exec($ch);
+  
+  if ($result === false || is_null($result) || empty($result)) {
+    $log->lwrite('   Failed connecting to ' . $endpointURL . ', check conncetivity!');
+    return false;
+  }
+  $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+  
+  if ($httpCode != 200 && $httpCode != 301 && $httpCode != 302) {
+    $log->lwrite('   Failed connecting to ' . $endpointURL . ', error=' . $httpCode);
+    return false;
+  }
+  
+  return true;
 }
 }

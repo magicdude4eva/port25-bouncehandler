@@ -118,7 +118,7 @@ function MailWizz_unsubscribeRecipient($recipient) {
 
 }
 
-// Unsubscriber-UID from List
+// Unsubscribe UID from List
 function MailWizz_unsubscribeSubscriberUIDFromListUID($subscriberUID, $listUID) { 
   global $log, $reportingInterface, $MailWizzEndPoint, $MAILWIZZ_HANDLER_ENABLED;
 	
@@ -132,6 +132,7 @@ function MailWizz_unsubscribeSubscriberUIDFromListUID($subscriberUID, $listUID) 
   
   if ($unsubscriberesponse->body['status'] == "success") {
     $unsubMessage = $unsubscriberesponse->body['status'] . " for listUID=" . $listUID;
+    $reportingInterface->logReportRecord("bounce_mailwizz", 1);
     $log->lwrite('   - ' . $unsubMessage);
     $unsubscribeSuccess = true;
   } else if ($unsubscriberesponse->body['status'] != "success") {

@@ -147,8 +147,8 @@ while(( $bounceRecord = fgetcsv(STDIN,4096)) !== FALSE ) {
   if ($STANDALONE_MODE == false && $bounceRecord[0]=="f") {
     // For bounce records we sometimes get RFC emails (i.e. "<name@outlook.com>") and need to just strip out the email
     if (!is_null($bounceRecord[PORT25_OFFSET_FEEDBACK_RECIPIENT]) && !empty($bounceRecord[PORT25_OFFSET_FEEDBACK_RECIPIENT])) {
-    preg_match('/[\\w\\.\\-+=*_]*@[\\w\\.\\-+=*_]*/', $bounceRecord[PORT25_OFFSET_FEEDBACK_RECIPIENT], $regs);
-    $recipient = $regs[0];
+      preg_match('/[\\w\\.\\-+=*_]*@[\\w\\.\\-+=*_]*/', $bounceRecord[PORT25_OFFSET_FEEDBACK_RECIPIENT], $regs);
+      $recipient = $regs[0];
     } else if (!is_null($bounceRecord[PORT25_OFFSET_FEEDBACK_LISTUNSUBSCRIBE]) && !empty($bounceRecord[PORT25_OFFSET_FEEDBACK_LISTUNSUBSCRIBE])) {
        // mail.ru does not send the from address, we just set a dummy, as we are able to pick the recipient from the List-Unsubscribe
        // AOL does not send a reporting domain either
@@ -175,7 +175,7 @@ while(( $bounceRecord = fgetcsv(STDIN,4096)) !== FALSE ) {
 
     $FEEDBACK_LOOP_MODE = true;
   }
-
+  
   // Only handle valid bounce categories. We skip any bounce-category which does not match
   if ($STANDALONE_MODE == false && $BOUNCE_MODE == true && !in_array($bounceRecord[PORT25_OFFSET_BOUNCE_BOUNCE_CAT], $bounceCategories)) {
     ++$totalRecordsSkipped;
@@ -207,7 +207,7 @@ while(( $bounceRecord = fgetcsv(STDIN,4096)) !== FALSE ) {
     if (defined('RRD_FILE') && RRD_FILE) {
       $reportingInterface->logReportRecord("fbl_reports", 1);
     }
-    
+
     feedbackLoopEvent($recipient,$bounceRecord);
     ++$totalRecordsProcessed;
     continue;
@@ -223,6 +223,8 @@ while(( $bounceRecord = fgetcsv(STDIN,4096)) !== FALSE ) {
       $reportingInterface->logReportRecord("bounces", 1);
     }
     //Transactional_unsubscribeRecipient($recipient, $bounceRecord); - your own transactinal processor
+    MailWizz_unsubscribeRecipient($recipient);
+    Interspire_unsubscribeRecipient($recipient);
     ++$totalRecordsProcessed;
     continue;
   }
@@ -257,6 +259,9 @@ $log->lwrite('Completed bounce processing! Total records=' . $totalRecords . ', 
 
 // close log file
 $log->lclose();
+
+// close stats file
+$statsfile->lclose();
 
 die();
 
