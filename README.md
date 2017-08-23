@@ -74,6 +74,11 @@ When we bounce an email-recipient in Interspire, we subscribe the email-recipien
 ## About MailWizz bounce processing
 MailWizz functions similar to Interspire and we also unsubscribe an email-recipient from all contact lists.
 
+In order for the port25-bouncehandler to properly identify MailWizz campaigns, you need to configure a custom-header in MailWizz via "Servers -> Delivery Servers: Additional Headers" as depicted below (this needs to be done per delivery server):
+
+![MailWizz header](https://raw.githubusercontent.com/magicdude4eva/port25-bouncehandler/master/mailwizz-x-job-header-for-port25.png)
+
+
 # Standalone processing
 You can manage bulk-unsubscribes via standalone. The only pre-requisite is a CSV file which contains an email-address in the first column of the file.
 
