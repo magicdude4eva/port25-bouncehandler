@@ -76,7 +76,7 @@ MailWizz functions similar to Interspire and we also unsubscribe an email-recipi
 
 In order for the port25-bouncehandler to properly identify MailWizz campaigns, you need to configure a custom-header in MailWizz via "Servers -> Delivery Servers: Additional Headers" as depicted below (this needs to be done per delivery server):
 
-![MailWizz header](https://raw.githubusercontent.com/magicdude4eva/port25-bouncehandler/master/mailwizz-x-job-header-for-port25.png)
+![MailWizzJobHeaderForPort25](https://raw.githubusercontent.com/magicdude4eva/port25-bouncehandler/master/mailwizz-x-job-header-for-port25.png)
 
 
 # Standalone processing
