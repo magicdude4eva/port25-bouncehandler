@@ -1,15 +1,15 @@
 #!/usr/bin/php -q
 <?php
  /*
- * 
+ *
  * bouncehandler.php | MailWizz / PowerMTA / Webhook bounce handler
- * Copyright (c) 2016 Gerd Naschenweng / bidorbuy.co.za
- * 
+ * Copyright (c) 2016-2017 Gerd Naschenweng / bidorbuy.co.za
+ *
  * The MIT License (MIT)
  *
  * @author Gerd Naschenweng <gerd@naschenweng.info>
- * @link http://www.naschenweng.info/
- * @copyright 2016 Gerd Naschenweng  http://github.com/magicdude4eva
+ * @link https://www.naschenweng.info/
+ * @copyright 2016-2017 Gerd Naschenweng  https://github.com/magicdude4eva
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -32,17 +32,15 @@
  */
 
 /**
- * Notes: 
+ * Notes:
  * - Configure your API keys in setup.php
  *
- * - For MailWizz 
+ * - For MailWizz
  *   = download MailWizz SDK from https://github.com/twisted1919/mailwizz-php-sdk/tree/master/MailWizzApi
  *   = copy the MailWizzAPI directory into the same providers directory
  *
- * - In Port25 add the following accounting record:
-
  */
- 
+
 // Initialise Setup and configuration
 // Adjust the setup.php accordingly
 require_once dirname(__FILE__) . '/setup.php';
@@ -52,7 +50,7 @@ require_once dirname(__FILE__) . '/setup.php';
 // Main programme
 $log->lwrite('------------------------------------------------------------------');
 $log->lwrite('Port25 PowerMTA unsubscribe-handler');
-$log->lwrite('(C) 2016 Gerd Naschenweng  http://github.com/magicdude4eva');
+$log->lwrite('(C) 2016-2017 Gerd Naschenweng  https://github.com/magicdude4eva');
 $log->lwrite('------------------------------------------------------------------');
 
 // ------------------------------------------------------------------------------------------------------
@@ -151,7 +149,7 @@ while($data = fgets(STDIN)) {
 
 }
 
-  $log->lwrite(' Received: 
+  $log->lwrite(' Received:
 ---------------------------------------------
 ' . $DEBUG_DATA . '
 ---------------------------------------------');
@@ -160,18 +158,18 @@ while($data = fgets(STDIN)) {
 // Process the unsubscribe request
 if (!is_null($UNSUBSCRIBE_HANDLER_TO) && !empty($UNSUBSCRIBE_HANDLER_TO) && filter_var($UNSUBSCRIBE_HANDLER_TO, FILTER_VALIDATE_EMAIL)) {
   $log->lwrite('* Unsubscribe request from ' . $UNSUBSCRIBE_HANDLER_FROM . ' for ' . $UNSUBSCRIBE_HANDLER_TO);
-  
+
   // We get the to-address as:
   // [SUBSCRIBERID].[LIST_UID].[CAMPAIGN_UID]@fbl-unsub.bidorbuy.co.za
   preg_match('/(.*)\.(.*)\.(.*)@fbl-unsub\.bidorbuy\.co\.za/', $UNSUBSCRIBE_HANDLER_TO, $regs);
-  
+
   if (!is_null($regs) && !empty($regs) && sizeof($regs) == 4) {
-    $unsubscribe = MailWizz_unsubscribeSubscriberUIDFromListUID($regs[1], $regs[2]);
-    
+    $unsubscribe = MailWizz_unsubscribeSubscriberUIDFromListUID($regs[1], $regs[2], $regs[3]);
+
     if ($unsubscribe[0] == true) {
       $reportingInterface->logReportRecord("bounces", 1);
       sendUnsubscribeEmailNotification($UNSUBSCRIBE_HANDLER_FROM, $regs[1], $regs[2], $regs[3], htmlspecialchars($UNSUBSCRIBE_DATA, ENT_QUOTES));
-    } 
+    }
   } else {
     $log->lwrite('   Unsubscribe address not in correct format!');
   }
@@ -193,7 +191,7 @@ die();
 
 // ========================================================================================================
 // Send Unsubscribe notification
-function sendUnsubscribeEmailNotification($recipient, $subscriberUID, $listUID, $campaignUID, $unsubscribeEmailData) { 
+function sendUnsubscribeEmailNotification($recipient, $subscriberUID, $listUID, $campaignUID, $unsubscribeEmailData) {
   global $log, $statsfile, $LOG_STATS_FILE_ONLY;
 
   $campaignData = MailWizz_getCampaignListId($campaignUID);
@@ -208,7 +206,7 @@ function sendUnsubscribeEmailNotification($recipient, $subscriberUID, $listUID, 
     }
     return;
   }
-  
+
   // Send the email using PHPMailer
   $mail = new PHPMailer();
   $mail->IsSMTP();                                      // set mailer to use SMTP
@@ -220,7 +218,7 @@ function sendUnsubscribeEmailNotification($recipient, $subscriberUID, $listUID, 
   $mail->AddAddress("postmaster@YOURDOMAIN.COM", "bidorbuy Postmaster");
   $mail->AddReplyTo("postmaster@YOURDOMAIN.COM", "bidorbuy Postmaster");
   $mail->Subject = "Port25: Unsubscribe request received";
-  
+
   $mail->Body = '<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML+RDFa 1.1//EN" "http://www.w3.org/MarkUp/DTD/xhtml-rdfa-2.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:v="http://rdf.data-vocabulary.org/#" lang="en" xml:lang="en" dir="ltr" xmlns:og="http://ogp.me/ns#" >
@@ -238,7 +236,7 @@ function sendUnsubscribeEmailNotification($recipient, $subscriberUID, $listUID, 
       . '<tr><td nowrap style="white-space:nowrap"><strong>List subscriber count:</strong> </td><td nowrap style="white-space:nowrap">' .  $campaignData[3] . '</td></tr>'
       ;
   }
-  
+
   $mail->Body .= '</table>
 <br/><br/>
 <h2>Email received from service provider</h2>
@@ -250,11 +248,11 @@ function sendUnsubscribeEmailNotification($recipient, $subscriberUID, $listUID, 
 <hr>
 </body></html>
   ';
-  
+
   if (!$mail->Send()) {
     $log->lwrite('FBL record processed! Email notification failed: ' . $mail->ErrorInfo);
   }
-  
+
 }
 
 

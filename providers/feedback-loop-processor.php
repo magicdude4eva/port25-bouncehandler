@@ -1,14 +1,14 @@
 <?php
  /*
- * 
+ *
  * bouncehandler.php | MailWizz / PowerMTA / Webhook bounce handler
- * Copyright (c) 2016 Gerd Naschenweng / bidorbuy.co.za
- * 
+ * Copyright (c) 2016-2017 Gerd Naschenweng / bidorbuy.co.za
+ *
  * The MIT License (MIT)
  *
  * @author Gerd Naschenweng <gerd@naschenweng.info>
- * @link http://www.naschenweng.info/
- * @copyright 2016 Gerd Naschenweng  http://github.com/magicdude4eva
+ * @link https://www.naschenweng.info/
+ * @copyright 2016-2017 Gerd Naschenweng  https://github.com/magicdude4eva
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -29,7 +29,7 @@
  * SOFTWARE.
  *
  */
- 
+
 $log->lwrite('Feedback-provider: initialising');
 
 // ------------------------------------------------------------------------------------------------------
@@ -41,11 +41,12 @@ $log->lwrite('Feedback-provider: complete');
 
 // ========================================================================================================
 // Handle Feedback Loop Event
-function feedbackLoopEvent($recipient, $feedbackLoopRecord) { 
+function feedbackLoopEvent($recipient, $feedbackLoopRecord) {
   global $log, $statsfile, $LOG_STATS_FILE_ONLY;
-  
+
   $reportAgent = $feedbackLoopRecord[5];
   $senderEmail = $feedbackLoopRecord[7];
+  $Mailwizz_bounceRecord = null;
 
   // For bounce records we sometimes get RFC emails (i.e. "<name@outlook.com>") and need to just strip out the email
   preg_match('/[\\w\\.\\-+=*_]*@[\\w\\.\\-+=*_]*/', $feedbackLoopRecord[12], $regs);
@@ -58,22 +59,30 @@ function feedbackLoopEvent($recipient, $feedbackLoopRecord) {
   if ((is_null($reportAgent) || empty($reportAgent)) && $feedbackLoopRecord[4] == 'jmrp') {
     $reportAgent = "Microsoft JMRP/" . $feedbackLoopRecord[11];
   }
-  
+
   $log->lwrite('FBL received from: ' . $reportAgent . ' for=' .  $feedbackLoopRecord[8] . ' via ' . $feedbackLoopRecord[8]);
-  
+
   // We check if we have the MailWizz header "List-Id" and "X-Mw-Subscriber-Uid" in the FBL, then we change the recipient
   if (array_key_exists(20, $feedbackLoopRecord) && !is_null($feedbackLoopRecord[20]) && !empty($feedbackLoopRecord[20]) &&
       array_key_exists(21, $feedbackLoopRecord) && !is_null($feedbackLoopRecord[21]) && !empty($feedbackLoopRecord[21])) {
     $subscriberEmail = MailWizz_getSubscriber($feedbackLoopRecord[20], $feedbackLoopRecord[21]);
-    
+
     if ($subscriberEmail[0] == true) {
       $log->lwrite('*** FBL record provided list-id=' . $feedbackLoopRecord[20] . ' and subscriberid=' . $feedbackLoopRecord[21] . ", using=" . $subscriberEmail[1]);
       $recipient = $subscriberEmail[1];
     }
-  }
-    
-  $unsub_mailwizz   = MailWizz_unsubscribeRecipient($recipient);
 
+    // We also extract the MailWizz job-id to get the campaign-id
+    if (array_key_exists(14, $feedbackLoopRecord) && !is_null($feedbackLoopRecord[14]) && !empty($feedbackLoopRecord[14])) {
+      $Mailwizz_bounceRecord = array(
+        'soft',                          // 1-bounce-type (hard, soft, internal)
+        $feedbackLoopRecord[14],         // 2- Campaign-UID
+        'Abuse/FBL via ' . $reportAgent  // 3- bounce-reason
+        );
+    }
+  }
+
+  $unsub_mailwizz   = MailWizz_unsubscribeRecipient($recipient, $Mailwizz_bounceRecord);
   $unsub_interspire = Interspire_unsubscribeRecipient($recipient);
 
   // Write stats file record
@@ -125,7 +134,7 @@ function feedbackLoopEvent($recipient, $feedbackLoopRecord) {
 <br/><br/>
 </body></html>
   ';
-  
+
   if (!$mail->Send()) {
     $log->lwrite('FBL record processed! Email notification failed: ' . $mail->ErrorInfo);
   } else {
