@@ -8,11 +8,29 @@ ___
 
 ## TL;DR - Features
 * Requires PHP5.6 and PHPMailer (optional is RRD for graphing)
+* Tested with Port25 PowerMTA 4.5
 * Integrates with MailWizz, Interspire and provides functionality to plug in your own handler
 * With Port25 PowerMTA you get the following real-time functionality
- * Uses PowerMTA accounting pipes to unsubscribe when a bounce occurs
- * Uses PowerMTA feedback loop processing and unsubscribes recipients as FBL complaints arrive
- * Uses PowerMTA domain pipe handling to handle List-Unsubscribes
+* Uses PowerMTA accounting pipes to unsubscribe when a bounce occurs
+* Uses PowerMTA feedback loop processing and unsubscribes recipients as FBL complaints arrive
+* Uses PowerMTA domain pipe handling to handle List-Unsubscribes
+* NEW: Uses new MailWizz bounce API to record hard- and soft-bounces
+
+## IMPORTANT: Before logging issues
+I receive frequent requests to provide consulting- or installation-services for Port25, the scripts etc. While I appreciate your donations to keep my contributions going, I can unfortunately not assist you with fixing your configuration / installation.
+
+The majority of issues I receive are based on:
+* You did not read the documentation
+* You did not adjust the setup.php and adjusted your Port25 configuration to pass the right data
+* Your Port25 version is outdated (if you are not running PowerMTA 4.5 you will most likely struggle)
+* Your PHP version is old (PHP5.6 is a minimum requirement, older versions might work)
+* You lack basic Linux / e-mail skills - if DKIM/SPF/MX-records/delivery-servers sound foreign, you should probably not do this
+
+## IMPORTANT2: Don't resell my scripts
+The scripts are open-source and free. There is nothing more annoying when I receive emails / issues from your angry customers that they paid ridiculous amounts of money for bounce-handling and my scripts are not working. If you resell my scripts and then change license information / remove any attribution to my work you are violating the license of this project.
+
+If you resell my scripts, keep copyright intact and then perhaps also extend the decency to provide a Paypal contribution. I am more than happy to fix bugs and make improvements, but will not do so on the back of your commercial ventures.
+
 
 ## Overview
 Transactional- and promotional mail to our customers is an important mechanism to stay in touch and hopefully improve revenue due to the value and information we provide in our communication with customers.
@@ -43,6 +61,8 @@ All configuration is controlled within `setup.php` and the following options can
 * __LOG_CONSOLE_MODE__: Set to `1` to log to the console. If you leave it at `0` it will log to `/var/log/pmta/pmta-bounce-handler.log` (or if the file can not be written, it will create `pmta-bounce-handler.log` in the directory where the script is run)
 * __LOG_FILE__: The logfile you want to recourd the bounce-processing.
 * __$bounceCategories__: An array of bounce-category strings. This is only used when processing PowerMTA accounting files. The default is ```$bounceCategories = array("bad-mailbox","bad-domain","routing-errors","inactive-mailbox");```. If the array is empty, all records are processed as bounces. ***CAREFUL****: PowerMTA also records transient/soft-bounces and you would inadvertently unsubscribe users due to temporary delivery errors (i.e. mailbox full).
+* __$softbounceCategories__: An array of soft-bounce-category strings. This is used to classify bounces in MailWizz and other campaign tools and is used to determine if a bounce is a soft- or hard-bounce.. The default is ```$softbounceCategories = array("bad-configuration", "bad-connection", "content-related", "invalid-sender", "other", "policy-related", "quota-issues", "spam-related", "virus-related");```. If the array is empty, all bounces are classified as hard-bounces.
+
 
 **INTERSPIRE CONFIGURATION**:
 If you do not use Interspire, leave constants as undefined:
@@ -142,7 +162,7 @@ The processing of a PowerMTA file is quite similar, with the only addition that 
 ```
 
 # Port25 processing
-:warning: I can not help you with configuration/setup issues when it comes to PowerMTA. I have extensive experience, but each setup varies, although the basic principles remain the same.
+:warning: I can not help you with configuration/setup issues when it comes to PowerMTA. I have extensive experience, but each setup varies, although the basic principles remain the same. This README is comprehensive enough that you will be able to configure your environment properly if you read this document twice.
 
 If you do not follow the default setup below, I suggest you read the PowerMTA user-guide (specifically: `3.3.7 Accounting Directives` and `11. The Accounting and Statistics`).
 
@@ -366,4 +386,22 @@ I have been asked a number of times what infrastructure we are running, and whil
 * We also use some custom reporting scripts with the RRD data we generate
 
 ## Collecting, parsing and analysing Port25 accounting files
-We use Logstash and Graylog for log collection and monitoring. Logstash has a versatile CSV filter which allows the parsing and processing of PowerMTA accounting files into Graylog or Kibana - the GIST can be viewed via the GIST:[Port25 Logstash & Graylog integration](https://gist.github.com/magicdude4eva/5001d3b52743062f6fb28e3a92b7fce4)
+We use Logstash and Graylog for log collection and monitoring. Logstash has a versatile CSV filter which allows the parsing and processing of PowerMTA accounting files into Graylog or Kibana - the GIST can be viewed via the GIST: [Port25 Logstash & Graylog integration](https://gist.github.com/magicdude4eva/5001d3b52743062f6fb28e3a92b7fce4)
+
+## Writing your own API / processor
+I often get asked "Can you help me integrate your scripts with product XYZ, it has APIs?". Although I enjoy coding, I don't think it is a good idea to write scripts for an environment which I do not use or monitor. The scripts I provide have been used in our production environment for several years and work reliable because we monitor them and tweak them when necessary.
+
+My script setup is however very pluggable and any PHP developer will be able to write a processor by following these steps:
+
+1. Look at the MailWizz provider for inspiration: https://github.com/magicdude4eva/port25-bouncehandler/blob/master/providers/bounce-provider-mailwizz.php
+2. Setup config for your provider similar to: https://github.com/magicdude4eva/port25-bouncehandler/blob/master/setup.php#L64
+3. Write the API for unsubscribe for your product - https://github.com/magicdude4eva/port25-bouncehandler/blob/master/providers/bounce-provider-mailwizz.php#L80
+4. Initialise the provider in the relevant code bases:
+- https://github.com/magicdude4eva/port25-bouncehandler/blob/master/unsubhandler.php#L57
+- https://github.com/magicdude4eva/port25-bouncehandler/blob/master/bouncehandler.php#L109
+5. Add the API calls to unsubscribe in relevant code:
+- https://github.com/magicdude4eva/port25-bouncehandler/blob/master/unsubhandler.php#L167
+- https://github.com/magicdude4eva/port25-bouncehandler/blob/master/providers/feedback-loop-processor.php#L85
+- https://github.com/magicdude4eva/port25-bouncehandler/blob/master/bouncehandler.php#L203
+- https://github.com/magicdude4eva/port25-bouncehandler/blob/master/bouncehandler.php#L232
+- https://github.com/magicdude4eva/port25-bouncehandler/blob/master/bouncehandler.php#L258
