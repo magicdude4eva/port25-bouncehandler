@@ -174,18 +174,19 @@ function MailWizz_unsubscribeSubscriberUIDFromListUID($subscriberUID, $listUID, 
     $unsubscribeSuccess = true;
 
     // Call the campaign-bounce endpoint
-    $bounceresponse = $MailWizzCampaignBounceEndPoint->create($campaignUID, array(
-      'message'        => 'Port25 List-Unsubscribe', // max 250 chars
-      'bounce_type'    => 'soft',                    // hard, soft or internal
-      'subscriber_uid' => $subscriberUID             // 13 chars unique subscriber identifier
-    ));
+    if (!is_null($campaignUID) && !empty($campaignUID)) {
+      $bounceresponse = $MailWizzCampaignBounceEndPoint->create($campaignUID, array(
+        'message'        => 'Port25 List-Unsubscribe', // max 250 chars
+        'bounce_type'    => 'soft',                    // hard, soft or internal
+        'subscriber_uid' => $subscriberUID             // 13 chars unique subscriber identifier
+      ));
 
-    if ($bounceresponse->body['status'] == "success") {
-      $log->lwrite('   - Bounce-update for campaign=' . $campaignUID . ' and subscriberUID=' . $subscriberUID . ' successful=' . $bounceresponse->body['status']);
-    } else if ($bounceresponse->body['status'] != "success") {
-      $log->lwrite('   - Bounce-update for campaign=' . $campaignUID . ' and subscriberUID=' . $subscriberUID . ' failed with error=' . $bounceresponse->body['error']);
+      if ($bounceresponse->body['status'] == "success") {
+        $log->lwrite('   - Bounce-update for campaign=' . $campaignUID . ' and subscriberUID=' . $subscriberUID . ' successful=' . $bounceresponse->body['status']);
+      } else if ($bounceresponse->body['status'] != "success") {
+        $log->lwrite('   - Bounce-update for campaign=' . $campaignUID . ' and subscriberUID=' . $subscriberUID . ' failed with error=' . $bounceresponse->body['error']);
+      }
     }
-
 
   } else if ($unsubscriberesponse->body['status'] != "success") {
     $log->lwrite('   - Failed with status=' . $unsubscriberesponse->body['error']);

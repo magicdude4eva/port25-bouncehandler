@@ -164,7 +164,7 @@ if (!is_null($UNSUBSCRIBE_HANDLER_TO) && !empty($UNSUBSCRIBE_HANDLER_TO) && filt
   preg_match('/(.*)\.(.*)\.(.*)@fbl-unsub\.bidorbuy\.co\.za/', $UNSUBSCRIBE_HANDLER_TO, $regs);
 
   if (!is_null($regs) && !empty($regs) && sizeof($regs) == 4) {
-    $unsubscribe = MailWizz_unsubscribeSubscriberUIDFromListUID($regs[1], $regs[2], $regs[3]);
+    $unsubscribe = MailWizz_unsubscribeSubscriberUIDFromListUID($regs[1], $regs[2], null);
 
     if ($unsubscribe[0] == true) {
       $reportingInterface->logReportRecord("bounces", 1);
