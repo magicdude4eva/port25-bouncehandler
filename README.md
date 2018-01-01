@@ -405,3 +405,19 @@ My script setup is however very pluggable and any PHP developer will be able to 
 - https://github.com/magicdude4eva/port25-bouncehandler/blob/master/bouncehandler.php#L203
 - https://github.com/magicdude4eva/port25-bouncehandler/blob/master/bouncehandler.php#L232
 - https://github.com/magicdude4eva/port25-bouncehandler/blob/master/bouncehandler.php#L258
+
+
+## Donations are always welcome
+If this helped you in any way, you can always leave me a tip at
+```
+(Ripple) rPz4YgyxPpk7xqQQ9P7CqNFvK17nhBdfoy
+(BTC)    1Mhq9SY6DzPhs7PNDx7idXFDWsGtyn7GWM
+(ETH)    0xb0f2d091dcdd036cd26017bb0fbd6c1488fc8d04
+(LTC)    LTfP7yJSpGFvuPqjSEKaqcjue6KSA9118y
+(XVG)    D5nBpFBaD6vmVJ5CBUhkz8E4SNWscf6pMu
+(BNB)    0xb0f2d091dcdd036cd26017bb0fbd6c1488fc8d04
+```
+
+Sign up to [Cointracking](https://cointracking.info?ref=M263159) which uses APIs to connect to all exchanges and helps you with tax. Use [Binance Exchange](https://www.binance.com/?ref=13896895) to trade #altcoins. Join [TradingView](http://tradingview.go2cloud.org/aff_c?offer_id=2&aff_id=7432) to get trend-reports.
+
+If you are poor, follow me at least on [Twitter](https://twitter.com/gerdnaschenweng)!
