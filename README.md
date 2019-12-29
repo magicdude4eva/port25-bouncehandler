@@ -408,16 +408,16 @@ My script setup is however very pluggable and any PHP developer will be able to 
 
 
 ## Donations are always welcome
-If this helped you in any way, you can always leave me a tip at
+:beer: **Please support me**: If the above helped you in any way, then [follow me on Twitter](https://twitter.com/gerdnaschenweng) or send me some coins: 
 ```
-(Ripple) rPz4YgyxPpk7xqQQ9P7CqNFvK17nhBdfoy
-(BTC)    1Mhq9SY6DzPhs7PNDx7idXFDWsGtyn7GWM
-(ETH)    0xb0f2d091dcdd036cd26017bb0fbd6c1488fc8d04
-(LTC)    LTfP7yJSpGFvuPqjSEKaqcjue6KSA9118y
-(XVG)    D5nBpFBaD6vmVJ5CBUhkz8E4SNWscf6pMu
-(BNB)    0xb0f2d091dcdd036cd26017bb0fbd6c1488fc8d04
+(BTC)    1KBJLaaxgu7XBVsrTWg7XaFmSPRymiCvVz
+(ETH)    0x457772e18E9e65ef770666cfE45020b1887264A0
+(BAT)    0x4Ca83e45e3A527670f60dDEc5FDE194b69D325AA
+(LTC)    MLKZxPxhjKufqyYvv74StPFNxpbCnBRAdr
+(Ripple) rw2ciyaNshpHe7bCHo4bRWq6pqqynnWKQg (Tag: 2478959347)
+(XLM)    GDQP2KPQGKIHYJGXNUIYOMHARUARCA7DJT5FO2FFOOKY3B2WSQHG4W37 (Memo ID: 3145236732)
 ```
 
-Sign up to [Cointracking](https://cointracking.info?ref=M263159) which uses APIs to connect to all exchanges and helps you with tax. Use [Binance Exchange](https://www.binance.com/?ref=13896895) to trade #altcoins. Join [TradingView](http://tradingview.go2cloud.org/aff_c?offer_id=2&aff_id=7432) to get trend-reports.
+Sign up to [Cointracking](https://cointracking.info?ref=M263159) which uses APIs to connect to all exchanges and helps you with tax. Use [Binance Exchange](https://www.binance.com/?ref=13896895) to trade #altcoins. Join [TradingView](http://tradingview.go2cloud.org/aff_c?offer_id=2&aff_id=7432) to get trend-reports. Sign up with [Coinbase](https://www.coinbase.com/join/nasche_x) and **instantly get $10 in BTC**.
 
-If you are poor, follow me at least on [Twitter](https://twitter.com/gerdnaschenweng)!
+If you have no crypto, follow me at least on [Twitter](https://twitter.com/gerdnaschenweng)!
