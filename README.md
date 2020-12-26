@@ -412,10 +412,10 @@ My script setup is however very pluggable and any PHP developer will be able to 
 ```
 (BTC)    1KBJLaaxgu7XBVsrTWg7XaFmSPRymiCvVz
 (ETH)    0x457772e18E9e65ef770666cfE45020b1887264A0
-(BAT)    0x4Ca83e45e3A527670f60dDEc5FDE194b69D325AA
+(BAT)    0x48c65D6f768D92d4a23E4e9d25329E7De67c14d9
 (LTC)    MLKZxPxhjKufqyYvv74StPFNxpbCnBRAdr
 (Ripple) rw2ciyaNshpHe7bCHo4bRWq6pqqynnWKQg (Tag: 2478959347)
-(XLM)    GDQP2KPQGKIHYJGXNUIYOMHARUARCA7DJT5FO2FFOOKY3B2WSQHG4W37 (Memo ID: 3145236732)
+(XLM)    GDQP2KPQGKIHYJGXNUIYOMHARUARCA7DJT5FO2FFOOKY3B2WSQHG4W37 (Memo ID: 909493707)
 ```
 
 Sign up to [Cointracking](https://cointracking.info?ref=M263159) which uses APIs to connect to all exchanges and helps you with tax. Use [Binance Exchange](https://www.binance.com/?ref=13896895) to trade #altcoins. Join [TradingView](http://tradingview.go2cloud.org/aff_c?offer_id=2&aff_id=7432) to get trend-reports. Sign up with [Coinbase](https://www.coinbase.com/join/nasche_x) and **instantly get $10 in BTC**.
