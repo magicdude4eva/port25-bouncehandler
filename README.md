@@ -96,7 +96,7 @@ MailWizz functions similar to Interspire and we also unsubscribe an email-recipi
 
 In order for the port25-bouncehandler to properly identify MailWizz campaigns, you need to configure a custom-header in MailWizz via "Servers -> Delivery Servers: Additional Headers" as depicted below (this needs to be done per delivery server):
 
-![MailWizzJobHeaderForPort25](https://raw.githubusercontent.com/magicdude4eva/port25-bouncehandler/master/mailwizz-x-job-header-for-port25.png)
+![MailWizzJobHeaderForPort25](https://raw.githubusercontent.com/magicdude4eva/port25-bouncehandler/main/mailwizz-x-job-header-for-port25.png)
 
 
 # Standalone processing
@@ -223,7 +223,7 @@ Ensure that the bouncehandler logs the startup-messages in it's log-file. If thi
 # Port25 feedback loop processing
 Port25 is capable of processing feedback loop (FBL) reports. In our case we have automated the FBL processing, where Port25 receives the FBL report, then pipes it into our bouncehandler.php which then calls a feedback-loop processor. We automatically remove any reported email from all systems and notify our Postmaster team via email.
 
-![Port25 FBL notification](https://raw.githubusercontent.com/magicdude4eva/port25-bouncehandler/master/port25-fbl-notice.png)
+![Port25 FBL notification](https://raw.githubusercontent.com/magicdude4eva/port25-bouncehandler/main/port25-fbl-notice.png)
 
 For the setup to work, the following is required:
 
@@ -283,7 +283,7 @@ Some FBL providers (such as OpenSRS/ReturnPath) will anonymise the recipient-ema
 # Port25 List-Unsubscribe handling
 The unsubscribe handling currently only supports MailWizz, but can be extended to anything else. In order for MailWizz to work, you will need install and configure the `mailwizz-unsubscribe-extension`.
 
-![Port25 List-Unsubscribe notification](https://raw.githubusercontent.com/magicdude4eva/port25-bouncehandler/master/port25-list-unsubscribe-notice.png)
+![Port25 List-Unsubscribe notification](https://raw.githubusercontent.com/magicdude4eva/port25-bouncehandler/main/port25-list-unsubscribe-notice.png)
 
 Additionally, you need to make the following DNS and Port25 changes:
 
@@ -393,18 +393,18 @@ I often get asked "Can you help me integrate your scripts with product XYZ, it h
 
 My script setup is however very pluggable and any PHP developer will be able to write a processor by following these steps:
 
-1. Look at the MailWizz provider for inspiration: https://github.com/magicdude4eva/port25-bouncehandler/blob/master/providers/bounce-provider-mailwizz.php
-2. Setup config for your provider similar to: https://github.com/magicdude4eva/port25-bouncehandler/blob/master/setup.php#L64
-3. Write the API for unsubscribe for your product - https://github.com/magicdude4eva/port25-bouncehandler/blob/master/providers/bounce-provider-mailwizz.php#L80
+1. Look at the MailWizz provider for inspiration: https://github.com/magicdude4eva/port25-bouncehandler/blob/main/providers/bounce-provider-mailwizz.php
+2. Setup config for your provider similar to: https://github.com/magicdude4eva/port25-bouncehandler/blob/main/setup.php#L64
+3. Write the API for unsubscribe for your product - https://github.com/magicdude4eva/port25-bouncehandler/blob/main/providers/bounce-provider-mailwizz.php#L80
 4. Initialise the provider in the relevant code bases:
-- https://github.com/magicdude4eva/port25-bouncehandler/blob/master/unsubhandler.php#L57
-- https://github.com/magicdude4eva/port25-bouncehandler/blob/master/bouncehandler.php#L109
+- https://github.com/magicdude4eva/port25-bouncehandler/blob/main/unsubhandler.php#L57
+- https://github.com/magicdude4eva/port25-bouncehandler/blob/main/bouncehandler.php#L109
 5. Add the API calls to unsubscribe in relevant code:
-- https://github.com/magicdude4eva/port25-bouncehandler/blob/master/unsubhandler.php#L167
-- https://github.com/magicdude4eva/port25-bouncehandler/blob/master/providers/feedback-loop-processor.php#L85
-- https://github.com/magicdude4eva/port25-bouncehandler/blob/master/bouncehandler.php#L203
-- https://github.com/magicdude4eva/port25-bouncehandler/blob/master/bouncehandler.php#L232
-- https://github.com/magicdude4eva/port25-bouncehandler/blob/master/bouncehandler.php#L258
+- https://github.com/magicdude4eva/port25-bouncehandler/blob/main/unsubhandler.php#L167
+- https://github.com/magicdude4eva/port25-bouncehandler/blob/main/providers/feedback-loop-processor.php#L85
+- https://github.com/magicdude4eva/port25-bouncehandler/blob/main/bouncehandler.php#L203
+- https://github.com/magicdude4eva/port25-bouncehandler/blob/main/bouncehandler.php#L232
+- https://github.com/magicdude4eva/port25-bouncehandler/blob/main/bouncehandler.php#L258
 
 
 
